@@ -36,76 +36,38 @@ export default function AdminDashboard() {
 
     const business = Number(data.businessImpactScore || 0);
     const employee = Number(data.employeeImpactScore || 0);
-    const policyNecessary = Number(data.policyStats?.policy_necessary?.mean || 0);
-    const policyPressure = Number(data.policyStats?.policy_pressure?.mean || 0);
-    const ownerCount = Number(data.respondentCounts?.owner || 0);
-    const employeeCount = Number(data.respondentCounts?.employee || 0);
-    const dhakaCount = Number(data.locationCounts?.Dhaka || 0);
-    const outsideCount = Number(data.locationCounts?.['Outside Dhaka'] || 0);
+    const policyNeed = Number(data.policyStats?.policy_necessary?.mean || 0);
+    const policyNegative = Number(data.policyStats?.policy_business_negative?.mean || 0);
+    const policyBalance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
 
-    const list = [];
+    const ownerManagerCount = Number(data.respondentCounts?.owner_manager || 0);
+    const employeeCount = Number(data.respondentCounts?.floor_employee || 0);
 
-    if (business >= 3.5) {
-      list.push({
-        title: 'High business-side pressure',
-        body: `Owner-side business impact is elevated with a composite score of ${business.toFixed(2)}, suggesting notable cost, sales, and profit disruption.`,
-      });
-    } else {
-      list.push({
-        title: 'Moderate business impact',
-        body: `Owner-side business impact score is ${business.toFixed(2)}, indicating measurable but comparatively moderate financial strain.`,
-      });
-    }
-
-    if (employee >= 3.5) {
-      list.push({
-        title: 'Employees report strong disruption',
-        body: `Employee impact score is ${employee.toFixed(2)}, indicating stress, efficiency loss, and customer-handling difficulty are substantial concerns.`,
-      });
-    } else {
-      list.push({
-        title: 'Employee impact remains visible',
-        body: `Employee impact score is ${employee.toFixed(2)}, showing that workforce challenges exist even when not at the highest severity level.`,
-      });
-    }
-
-    if (policyPressure > policyNecessary) {
-      list.push({
-        title: 'Policy burden exceeds policy support',
-        body: `Mean policy pressure (${policyPressure.toFixed(2)}) is higher than perceived policy necessity (${policyNecessary.toFixed(2)}), suggesting concern over economic trade-offs.`,
-      });
-    } else {
-      list.push({
-        title: 'Policy necessity remains comparatively stronger',
-        body: `Perceived policy necessity (${policyNecessary.toFixed(2)}) is equal to or above policy pressure (${policyPressure.toFixed(2)}), indicating partial public justification for restrictions.`,
-      });
-    }
-
-    if (outsideCount > dhakaCount) {
-      list.push({
-        title: 'Outside-Dhaka participation leads',
-        body: `Responses outside Dhaka (${outsideCount}) exceed Dhaka (${dhakaCount}), which may strengthen comparative interpretation beyond the capital context.`,
-      });
-    } else {
-      list.push({
-        title: 'Dhaka-based responses remain substantial',
-        body: `Dhaka responses (${dhakaCount}) are equal to or higher than outside-Dhaka responses (${outsideCount}), supporting city-centered interpretation as well.`,
-      });
-    }
-
-    if (employeeCount > ownerCount) {
-      list.push({
-        title: 'Workforce voice is more prominent',
-        body: `Employee responses (${employeeCount}) outnumber owner/manager responses (${ownerCount}), giving stronger weight to staff-side perceptions.`,
-      });
-    } else {
-      list.push({
-        title: 'Management voice is comparatively strong',
-        body: `Owner/manager responses (${ownerCount}) are equal to or exceed employee responses (${employeeCount}), strengthening business-side interpretation.`,
-      });
-    }
-
-    return list.slice(0, 5);
+    return [
+      {
+        title: business >= 3.5 ? 'High business impact' : 'Moderate business impact',
+        body: `Owner/manager composite business impact score is ${business.toFixed(2)}.`,
+      },
+      {
+        title: employee >= 3.5 ? 'Strong employee-side disruption' : 'Employee impact remains visible',
+        body: `Floor employee impact score is ${employee.toFixed(2)}.`,
+      },
+      {
+        title:
+          policyNegative > policyNeed
+            ? 'Policies seen as more harmful than necessary'
+            : 'Policy necessity still recognized',
+        body: `Policy necessity mean: ${policyNeed.toFixed(2)} | Negative business effect mean: ${policyNegative.toFixed(2)}.`,
+      },
+      {
+        title: 'Balanced approach is important',
+        body: `Balance-between-energy-saving-and-economic-activity mean score is ${policyBalance.toFixed(2)}.`,
+      },
+      {
+        title: 'Sample composition insight',
+        body: `Owner/manager responses: ${ownerManagerCount} | Floor employee responses: ${employeeCount}.`,
+      },
+    ];
   }, [data]);
 
   const executiveSummary = useMemo(() => {
@@ -113,22 +75,18 @@ export default function AdminDashboard() {
 
     const business = Number(data.businessImpactScore || 0);
     const employee = Number(data.employeeImpactScore || 0);
-    const pressure = Number(data.policyStats?.policy_pressure?.mean || 0);
-    const necessary = Number(data.policyStats?.policy_necessary?.mean || 0);
+    const negative = Number(data.policyStats?.policy_business_negative?.mean || 0);
+    const balance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
 
-    if (business > employee && pressure >= necessary) {
-      return 'The dataset indicates that the energy crisis is generating stronger financial pressure for supermarket owners, while current policies are also being perceived as economically burdensome.';
+    if (business > employee) {
+      return `The current dataset suggests stronger business-side effects among owners and managers, with policy-related business burden also remaining visible. Demand for a balanced policy approach is strong at ${balance.toFixed(2)}.`;
     }
 
-    if (employee > business && pressure >= necessary) {
-      return 'The dataset indicates that employee-side disruption is especially visible, and respondents also perceive a meaningful economic burden from current policy measures.';
+    if (employee > business) {
+      return `The current dataset suggests stronger employee-side disruption, especially in stress, efficiency, and routine stability. Respondents still strongly favor a balanced policy approach at ${balance.toFixed(2)}.`;
     }
 
-    if (necessary > pressure) {
-      return 'The dataset suggests that respondents still recognize the necessity of energy-saving measures, even though operational and workforce impacts remain evident.';
-    }
-
-    return 'The dataset suggests measurable operational, financial, and workforce impacts, with mixed but policy-relevant perceptions regarding the necessity and burden of current measures.';
+    return `The current dataset shows meaningful effects on both business performance and employee wellbeing, while policy negativity remains visible at ${negative.toFixed(2)} and respondents strongly support a balanced approach.`;
   }, [data]);
 
   if (loading) {
@@ -145,16 +103,13 @@ export default function AdminDashboard() {
     totalResponses,
     respondentCounts,
     locationCounts,
-    generalStats,
+    supermarketTypeCounts,
+    backupPowerCounts,
+    independentStats,
     businessImpactScore,
     employeeImpactScore,
     policyStats,
   } = data;
-
-  const typeLabels = Object.keys(respondentCounts || {});
-  const typeData = Object.values(respondentCounts || {});
-  const locationLabels = Object.keys(locationCounts || {});
-  const locationData = Object.values(locationCounts || {});
 
   return (
     <Layout title="Admin Dashboard">
@@ -171,25 +126,31 @@ export default function AdminDashboard() {
                 Research Analytics Dashboard
               </h1>
               <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">
-                Monitor live survey outcomes, compare response groups, and extract policy-ready findings from the collected dataset.
+                Monitor live survey outcomes and extract policy-ready insights from owner/manager and floor employee responses.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <a
-                href="/api/export"
+                href="/api/export?format=csv"
                 className="inline-flex items-center rounded-2xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-dark"
               >
                 Export CSV
               </a>
 
-              <button
-                type="button"
-                onClick={() => window.print()}
+              <a
+                href="/api/export?format=excel"
                 className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
               >
-                Print Summary
-              </button>
+                Export Excel
+              </a>
+
+              <a
+                href="/api/export?format=pdf"
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+              >
+                Premium PDF Report
+              </a>
 
               <button
                 type="button"
@@ -201,11 +162,24 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-5">
             <KpiCard label="Total Responses" value={totalResponses} />
-            <KpiCard label="Business Impact Score" value={Number(businessImpactScore || 0).toFixed(2)} />
-            <KpiCard label="Employee Impact Score" value={Number(employeeImpactScore || 0).toFixed(2)} />
-            <KpiCard label="Policy Pressure Mean" value={Number(policyStats?.policy_pressure?.mean || 0).toFixed(2)} />
+            <KpiCard
+              label="Business Impact Score"
+              value={Number(businessImpactScore || 0).toFixed(2)}
+            />
+            <KpiCard
+              label="Employee Impact Score"
+              value={Number(employeeImpactScore || 0).toFixed(2)}
+            />
+            <KpiCard
+              label="Policy Negative Mean"
+              value={Number(policyStats?.policy_business_negative?.mean || 0).toFixed(2)}
+            />
+            <KpiCard
+              label="Balance Needed Mean"
+              value={Number(policyStats?.policy_balance_needed?.mean || 0).toFixed(2)}
+            />
           </div>
 
           <div className="mt-6 rounded-3xl border border-blue-100 bg-blue-50/70 p-5">
@@ -219,14 +193,14 @@ export default function AdminDashboard() {
         </section>
 
         <section className="mb-8 grid gap-6 xl:grid-cols-2">
-          <ChartCard title="Respondent Type Distribution" subtitle="Owner/manager versus employee share">
+          <ChartCard title="Role Distribution" subtitle="Owner/manager versus floor employee">
             <div className="mx-auto max-w-[320px]">
               <Doughnut
                 data={{
-                  labels: typeLabels,
+                  labels: Object.keys(respondentCounts || {}).map(formatLabel),
                   datasets: [
                     {
-                      data: typeData,
+                      data: Object.values(respondentCounts || {}),
                       backgroundColor: ['#0d3b66', '#14b8a6', '#cbd5e1'],
                       borderWidth: 0,
                     },
@@ -240,14 +214,14 @@ export default function AdminDashboard() {
             </div>
           </ChartCard>
 
-          <ChartCard title="Location Distribution" subtitle="Dhaka versus outside Dhaka">
+          <ChartCard title="Location Distribution" subtitle="Dhaka/Chattogram versus other district/sub-urban">
             <div className="mx-auto max-w-[320px]">
               <Doughnut
                 data={{
-                  labels: locationLabels,
+                  labels: Object.keys(locationCounts || {}).map(formatLabel),
                   datasets: [
                     {
-                      data: locationData,
+                      data: Object.values(locationCounts || {}),
                       backgroundColor: ['#1d4ed8', '#f59e0b', '#cbd5e1'],
                       borderWidth: 0,
                     },
@@ -261,32 +235,98 @@ export default function AdminDashboard() {
             </div>
           </ChartCard>
 
+          <ChartCard title="Supermarket Type" subtitle="Profile breakdown by market category">
+            <Bar
+              data={{
+                labels: Object.keys(supermarketTypeCounts || {}).map(formatLabel),
+                datasets: [
+                  {
+                    label: 'Responses',
+                    data: Object.values(supermarketTypeCounts || {}),
+                    backgroundColor: ['#0d3b66', '#14b8a6'],
+                    borderRadius: 12,
+                  },
+                ],
+              }}
+              options={barOptions()}
+            />
+          </ChartCard>
+
+          <ChartCard title="Backup Power Source" subtitle="Primary backup source used by respondents">
+            <Bar
+              data={{
+                labels: Object.keys(backupPowerCounts || {}).map(formatLabel),
+                datasets: [
+                  {
+                    label: 'Responses',
+                    data: Object.values(backupPowerCounts || {}),
+                    backgroundColor: ['#0d3b66', '#1d4ed8', '#94a3b8'],
+                    borderRadius: 12,
+                  },
+                ],
+              }}
+              options={barOptions()}
+            />
+          </ChartCard>
+
           <ChartCard
-            title="General Impact Mean Scores"
-            subtitle="Average perception across major operational dimensions"
+            title="Independent Variable Mean Scores"
+            subtitle="Top energy crisis factors reported by respondents"
             className="xl:col-span-2"
           >
             <Bar
               data={{
-                labels: ['Operations', 'Service Time', 'Working Hours', 'Customer Flow'],
+                labels: [
+                  'Interruptions',
+                  'Outage Duration',
+                  'Unstable Electricity',
+                  'Fuel Price',
+                  'Tariff Pressure',
+                  'Early Closure',
+                  'Reduced Hours',
+                  'Planning Uncertainty',
+                  'Backup Dependence',
+                  'Policy Flexibility',
+                ],
                 datasets: [
                   {
                     label: 'Mean Score',
                     data: [
-                      generalStats?.op_negative_impact?.mean || 0,
-                      generalStats?.op_service_time?.mean || 0,
-                      generalStats?.op_working_hours?.mean || 0,
-                      generalStats?.op_customer_flow?.mean || 0,
+                      independentStats?.iv_power_interruptions?.mean || 0,
+                      independentStats?.iv_outage_duration?.mean || 0,
+                      independentStats?.iv_unstable_electricity?.mean || 0,
+                      independentStats?.iv_fuel_price_pressure?.mean || 0,
+                      independentStats?.iv_tariff_pressure?.mean || 0,
+                      independentStats?.iv_early_closure?.mean || 0,
+                      independentStats?.iv_reduced_working_hours?.mean || 0,
+                      independentStats?.iv_daily_uncertainty?.mean || 0,
+                      independentStats?.iv_backup_dependence?.mean || 0,
+                      independentStats?.iv_policy_flexibility?.mean || 0,
                     ],
-                    backgroundColor: ['#0d3b66', '#1d4ed8', '#14b8a6', '#f59e0b'],
-                    borderRadius: 12,
+                    backgroundColor: [
+                      '#0d3b66',
+                      '#1d4ed8',
+                      '#2563eb',
+                      '#14b8a6',
+                      '#0f766e',
+                      '#f59e0b',
+                      '#f97316',
+                      '#8b5cf6',
+                      '#7c3aed',
+                      '#64748b',
+                    ],
+                    borderRadius: 10,
                   },
                 ],
               }}
               options={{
                 plugins: { legend: { display: false } },
                 scales: {
-                  y: { beginAtZero: true, max: 5, grid: { color: '#e2e8f0' } },
+                  y: {
+                    beginAtZero: true,
+                    max: 5,
+                    grid: { color: '#e2e8f0' },
+                  },
                   x: { grid: { display: false } },
                 },
               }}
@@ -303,17 +343,13 @@ export default function AdminDashboard() {
               Policy-Oriented Findings Cards
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              These cards turn live dashboard metrics into short research-ready statements you can use for report drafting, presentation notes, or policy discussion.
+              These cards turn live dashboard metrics into short research-ready statements for report writing and presentation.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {findings.map((item, index) => (
-              <FindingCard
-                key={index}
-                title={item.title}
-                body={item.body}
-              />
+              <FindingCard key={index} title={item.title} body={item.body} />
             ))}
           </div>
         </section>
@@ -347,7 +383,9 @@ function KpiCard({ label, value }) {
 
 function ChartCard({ title, subtitle, children, className = '' }) {
   return (
-    <div className={`rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl ${className}`}>
+    <div
+      className={`rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl ${className}`}
+    >
       <h3 className="text-xl font-bold text-slate-900">{title}</h3>
       <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       <div className="mt-6">{children}</div>
@@ -362,4 +400,29 @@ function FindingCard({ title, body }) {
       <p className="mt-3 text-sm leading-7 text-slate-600">{body}</p>
     </div>
   );
+}
+
+function barOptions() {
+  return {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: '#e2e8f0' },
+      },
+      x: {
+        grid: { display: false },
+      },
+    },
+  };
+}
+
+function formatLabel(value) {
+  if (!value) return '';
+  return String(value)
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

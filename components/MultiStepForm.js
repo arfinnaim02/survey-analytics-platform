@@ -6,51 +6,88 @@ import LikertScale from './LikertScale';
 export default function MultiStepForm() {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
-    respondent_type: '',
+    role: '',
+    supermarket_type: '',
     location: '',
-    op_negative_impact: 3,
-    op_service_time: 3,
-    op_working_hours: 3,
-    op_customer_flow: 3,
-    business_cost: 3,
-    business_sales: 3,
-    business_profit: 3,
-    emp_stress: 3,
-    emp_efficiency: 3,
-    emp_customer_handling: 3,
+    backup_power_source: '',
+    years_in_service: '',
+
+    iv_power_interruptions: 3,
+    iv_outage_duration: 3,
+    iv_unstable_electricity: 3,
+    iv_fuel_price_pressure: 3,
+    iv_tariff_pressure: 3,
+    iv_early_closure: 3,
+    iv_reduced_working_hours: 3,
+    iv_daily_uncertainty: 3,
+    iv_backup_dependence: 3,
+    iv_policy_flexibility: 3,
+
+    business_cost_increase_level: '',
+    business_sales_decrease_level: '',
+    business_cost_increase: 3,
+    business_sales_reduced_hours: 3,
+    business_profit_margin_decline: 3,
+    business_evening_customer_flow: 3,
+    business_inventory_difficulty: 3,
+    business_backup_maintenance_cost: 3,
+
+    employee_workload_change: '',
+    employee_work_stress: 3,
+    employee_efficiency_decrease: 3,
+    employee_job_difficulty: 3,
+    employee_customer_handling: 3,
+    employee_uncomfortable_environment: 3,
+    employee_routine_disruption: 3,
+    employee_low_motivation: 3,
+
     policy_necessary: 3,
-    policy_pressure: 3,
+    policy_business_negative: 3,
+    policy_balance_needed: 3,
+    policy_preferred_solution: '',
   });
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
+  const isOwnerManager = formData.role === 'owner_manager';
+  const isFloorEmployee = formData.role === 'floor_employee';
+
   const steps = useMemo(() => {
     const base = [
-      { key: 'profile', title: 'Profile Information', subtitle: 'Tell us your respondent role and location.' },
-      { key: 'general', title: 'General Impact', subtitle: 'Assess the broad operational impact of the energy crisis.' },
+      {
+        key: 'profile',
+        title: 'Profile & Demographics',
+        subtitle: 'Provide your role, supermarket category, location, backup power source, and years in service.',
+      },
+      {
+        key: 'independent',
+        title: 'Energy Crisis Factors',
+        subtitle: 'Evaluate the major energy-related factors affecting business and work using the five-point agreement scale.',
+      },
     ];
 
-    if (formData.respondent_type === 'owner') {
+    if (isOwnerManager) {
       base.push({
         key: 'business',
         title: 'Business Impact',
-        subtitle: 'Measure the financial and sales-related pressure on supermarkets.',
+        subtitle: 'Measure cost, sales, customer flow, storage, and backup-maintenance effects on the business.',
       });
     }
 
-    if (formData.respondent_type === 'employee') {
+    if (isFloorEmployee) {
       base.push({
         key: 'employee',
         title: 'Employee Impact',
-        subtitle: 'Capture stress, efficiency, and customer-handling challenges.',
+        subtitle: 'Assess workload, stress, efficiency, routine disruption, and motivation under current energy conditions.',
       });
     }
 
     base.push(
       {
         key: 'policy',
-        title: 'Policy Opinion',
-        subtitle: 'Evaluate perceptions regarding current energy-saving policies.',
+        title: 'Policy Perception & Mitigation',
+        subtitle: 'Evaluate policy necessity, business impact, and your preferred solution.',
       },
       {
         key: 'review',
@@ -60,7 +97,7 @@ export default function MultiStepForm() {
     );
 
     return base;
-  }, [formData.respondent_type]);
+  }, [isOwnerManager, isFloorEmployee]);
 
   const progress = steps.length > 1 ? currentStep / (steps.length - 1) : 0;
   const current = steps[currentStep];
@@ -71,8 +108,30 @@ export default function MultiStepForm() {
 
   function canProceed() {
     if (current.key === 'profile') {
-      return formData.respondent_type && formData.location;
+      return (
+        formData.role &&
+        formData.supermarket_type &&
+        formData.location &&
+        formData.backup_power_source &&
+        formData.years_in_service
+      );
     }
+
+    if (current.key === 'business') {
+      return (
+        formData.business_cost_increase_level &&
+        formData.business_sales_decrease_level
+      );
+    }
+
+    if (current.key === 'employee') {
+      return formData.employee_workload_change;
+    }
+
+    if (current.key === 'policy') {
+      return formData.policy_preferred_solution;
+    }
+
     return true;
   }
 
@@ -129,119 +188,255 @@ export default function MultiStepForm() {
           >
             {current.key === 'profile' && (
               <>
-                <QuestionCard
-                  title="Respondent Type"
+                <SelectionQuestion
+                  title="Role"
                   description="Select the category that best describes you."
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <RoleCard
-                      active={formData.respondent_type === 'owner'}
-                      title="Owner / Manager"
-                      subtitle="Business or store management respondent"
-                      onClick={() => handleChange('respondent_type', 'owner')}
-                    />
-                    <RoleCard
-                      active={formData.respondent_type === 'employee'}
-                      title="Employee"
-                      subtitle="Operational or service staff respondent"
-                      onClick={() => handleChange('respondent_type', 'employee')}
-                    />
-                  </div>
-                </QuestionCard>
+                  field="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  options={[
+                    ['owner_manager', 'Owner / Manager'],
+                    ['floor_employee', 'Employee'],
+                  ]}
+                />
 
-                <QuestionCard
+                <SelectionQuestion
+                  title="Type of Supermarket"
+                  description="Choose the category that best matches your workplace."
+                  field="supermarket_type"
+                  value={formData.supermarket_type}
+                  onChange={handleChange}
+                  options={[
+                    ['brand_chain', 'Brand Chain (e.g., Shwapno, Agora)'],
+                    ['independent_local_supermarket', 'Independent Local Supermarket'],
+                  ]}
+                />
+
+                <SelectionQuestion
                   title="Location"
                   description="Choose the geographic context of the supermarket."
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <RoleCard
-                      active={formData.location === 'Dhaka'}
-                      title="Dhaka"
-                      subtitle="Stores located within Dhaka city"
-                      onClick={() => handleChange('location', 'Dhaka')}
-                    />
-                    <RoleCard
-                      active={formData.location === 'Outside Dhaka'}
-                      title="Outside Dhaka"
-                      subtitle="Stores located outside Dhaka city"
-                      onClick={() => handleChange('location', 'Outside Dhaka')}
-                    />
-                  </div>
-                </QuestionCard>
+                  field="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  options={[
+                    ['dhaka_chattogram', 'Dhaka / Chattogram'],
+                    ['other_district_suburban', 'Other District / Sub-urban'],
+                  ]}
+                />
+
+                <SelectionQuestion
+                  title="Primary Backup Power Source"
+                  field="backup_power_source"
+                  value={formData.backup_power_source}
+                  onChange={handleChange}
+                  options={[
+                    ['diesel_generator', 'Diesel Generator'],
+                    ['ips_solar', 'IPS / Solar'],
+                    ['no_backup', 'No Backup'],
+                  ]}
+                />
+
+                <SelectionQuestion
+                  title="Years in Business/Service"
+                  field="years_in_service"
+                  value={formData.years_in_service}
+                  onChange={handleChange}
+                  options={[
+                    ['less_than_2_years', 'Less than 2 years'],
+                    ['2_to_5_years', '2–5 years'],
+                    ['more_than_5_years', 'More than 5 years'],
+                  ]}
+                />
               </>
             )}
 
-            {current.key === 'general' && (
+            {current.key === 'independent' && (
               <>
                 <LikertQuestion
-                  title="The energy crisis has negatively affected supermarket operations."
-                  name="op_negative_impact"
-                  value={formData.op_negative_impact}
-                  onChange={(v) => handleChange('op_negative_impact', v)}
+                  title="Frequent electricity interruptions affect daily operations."
+                  name="iv_power_interruptions"
+                  value={formData.iv_power_interruptions}
+                  onChange={(v) => handleChange('iv_power_interruptions', v)}
                 />
                 <LikertQuestion
-                  title="Early shop closure has reduced customer service time."
-                  name="op_service_time"
-                  value={formData.op_service_time}
-                  onChange={(v) => handleChange('op_service_time', v)}
+                  title="Power outages last for long durations and disrupt service."
+                  name="iv_outage_duration"
+                  value={formData.iv_outage_duration}
+                  onChange={(v) => handleChange('iv_outage_duration', v)}
                 />
                 <LikertQuestion
-                  title="Changes in working hours (e.g. 9–4) have affected business patterns."
-                  name="op_working_hours"
-                  value={formData.op_working_hours}
-                  onChange={(v) => handleChange('op_working_hours', v)}
+                  title="Lack of stable electricity affects business continuity."
+                  name="iv_unstable_electricity"
+                  value={formData.iv_unstable_electricity}
+                  onChange={(v) => handleChange('iv_unstable_electricity', v)}
                 />
                 <LikertQuestion
-                  title="Customer flow has decreased due to energy-related policies."
-                  name="op_customer_flow"
-                  value={formData.op_customer_flow}
-                  onChange={(v) => handleChange('op_customer_flow', v)}
+                  title="Rising fuel/oil prices increase operational pressure."
+                  name="iv_fuel_price_pressure"
+                  value={formData.iv_fuel_price_pressure}
+                  onChange={(v) => handleChange('iv_fuel_price_pressure', v)}
+                />
+                <LikertQuestion
+                  title="Electricity tariff increases make utility costs difficult to manage."
+                  name="iv_tariff_pressure"
+                  value={formData.iv_tariff_pressure}
+                  onChange={(v) => handleChange('iv_tariff_pressure', v)}
+                />
+                <LikertQuestion
+                  title="Early shop closure policies restrict profitable business hours."
+                  name="iv_early_closure"
+                  value={formData.iv_early_closure}
+                  onChange={(v) => handleChange('iv_early_closure', v)}
+                />
+                <LikertQuestion
+                  title="Reduced working hours (9–4) limit customer flow."
+                  name="iv_reduced_working_hours"
+                  value={formData.iv_reduced_working_hours}
+                  onChange={(v) => handleChange('iv_reduced_working_hours', v)}
+                />
+                <LikertQuestion
+                  title="Energy supply issues create uncertainty in daily planning."
+                  name="iv_daily_uncertainty"
+                  value={formData.iv_daily_uncertainty}
+                  onChange={(v) => handleChange('iv_daily_uncertainty', v)}
+                />
+                <LikertQuestion
+                  title="The energy crisis increases dependence on backup power systems."
+                  name="iv_backup_dependence"
+                  value={formData.iv_backup_dependence}
+                  onChange={(v) => handleChange('iv_backup_dependence', v)}
+                />
+                <LikertQuestion
+                  title="Energy-related policies restrict business flexibility."
+                  name="iv_policy_flexibility"
+                  value={formData.iv_policy_flexibility}
+                  onChange={(v) => handleChange('iv_policy_flexibility', v)}
                 />
               </>
             )}
 
             {current.key === 'business' && (
               <>
+                <SelectionQuestion
+                  title="Operational cost increase level"
+                  field="business_cost_increase_level"
+                  value={formData.business_cost_increase_level}
+                  onChange={handleChange}
+                  options={[
+                    ['no_increase', 'No increase'],
+                    ['low', 'Low'],
+                    ['moderate', 'Moderate'],
+                    ['high', 'High'],
+                  ]}
+                />
+
+                <SelectionQuestion
+                  title="Sales decrease level"
+                  field="business_sales_decrease_level"
+                  value={formData.business_sales_decrease_level}
+                  onChange={handleChange}
+                  options={[
+                    ['no_decrease', 'No decrease'],
+                    ['slight', 'Slight'],
+                    ['moderate', 'Moderate'],
+                    ['significant', 'Significant'],
+                  ]}
+                />
+
                 <LikertQuestion
-                  title="Electricity and fuel costs have increased significantly."
-                  name="business_cost"
-                  value={formData.business_cost}
-                  onChange={(v) => handleChange('business_cost', v)}
+                  title="Operational costs have increased due to the energy crisis."
+                  name="business_cost_increase"
+                  value={formData.business_cost_increase}
+                  onChange={(v) => handleChange('business_cost_increase', v)}
                 />
                 <LikertQuestion
-                  title="Early shop closure has reduced daily sales."
-                  name="business_sales"
-                  value={formData.business_sales}
-                  onChange={(v) => handleChange('business_sales', v)}
+                  title="Daily sales have decreased due to reduced business hours."
+                  name="business_sales_reduced_hours"
+                  value={formData.business_sales_reduced_hours}
+                  onChange={(v) => handleChange('business_sales_reduced_hours', v)}
                 />
                 <LikertQuestion
-                  title="Business profit has decreased due to the energy crisis."
-                  name="business_profit"
-                  value={formData.business_profit}
-                  onChange={(v) => handleChange('business_profit', v)}
+                  title="Profit margins have declined."
+                  name="business_profit_margin_decline"
+                  value={formData.business_profit_margin_decline}
+                  onChange={(v) => handleChange('business_profit_margin_decline', v)}
+                />
+                <LikertQuestion
+                  title="Customer flow has decreased during evening hours."
+                  name="business_evening_customer_flow"
+                  value={formData.business_evening_customer_flow}
+                  onChange={(v) => handleChange('business_evening_customer_flow', v)}
+                />
+                <LikertQuestion
+                  title="Inventory management (refrigeration/storage) has become difficult."
+                  name="business_inventory_difficulty"
+                  value={formData.business_inventory_difficulty}
+                  onChange={(v) => handleChange('business_inventory_difficulty', v)}
+                />
+                <LikertQuestion
+                  title="Maintenance costs for backup systems have increased."
+                  name="business_backup_maintenance_cost"
+                  value={formData.business_backup_maintenance_cost}
+                  onChange={(v) => handleChange('business_backup_maintenance_cost', v)}
                 />
               </>
             )}
 
             {current.key === 'employee' && (
               <>
+                <SelectionQuestion
+                  title="Workload change"
+                  field="employee_workload_change"
+                  value={formData.employee_workload_change}
+                  onChange={handleChange}
+                  options={[
+                    ['decreased', 'Decreased'],
+                    ['no_change', 'No change'],
+                    ['increased', 'Increased'],
+                  ]}
+                />
+
                 <LikertQuestion
                   title="The energy crisis has increased my work stress."
-                  name="emp_stress"
-                  value={formData.emp_stress}
-                  onChange={(v) => handleChange('emp_stress', v)}
+                  name="employee_work_stress"
+                  value={formData.employee_work_stress}
+                  onChange={(v) => handleChange('employee_work_stress', v)}
                 />
                 <LikertQuestion
-                  title="My work efficiency has decreased due to energy-related issues."
-                  name="emp_efficiency"
-                  value={formData.emp_efficiency}
-                  onChange={(v) => handleChange('emp_efficiency', v)}
+                  title="My work efficiency has decreased."
+                  name="employee_efficiency_decrease"
+                  value={formData.employee_efficiency_decrease}
+                  onChange={(v) => handleChange('employee_efficiency_decrease', v)}
                 />
                 <LikertQuestion
-                  title="Customer handling becomes difficult during energy-related disruptions."
-                  name="emp_customer_handling"
-                  value={formData.emp_customer_handling}
-                  onChange={(v) => handleChange('emp_customer_handling', v)}
+                  title="Power-related issues make my job more difficult."
+                  name="employee_job_difficulty"
+                  value={formData.employee_job_difficulty}
+                  onChange={(v) => handleChange('employee_job_difficulty', v)}
+                />
+                <LikertQuestion
+                  title="Customer handling becomes more difficult during disruptions."
+                  name="employee_customer_handling"
+                  value={formData.employee_customer_handling}
+                  onChange={(v) => handleChange('employee_customer_handling', v)}
+                />
+                <LikertQuestion
+                  title="The working environment becomes uncomfortable during outages."
+                  name="employee_uncomfortable_environment"
+                  value={formData.employee_uncomfortable_environment}
+                  onChange={(v) => handleChange('employee_uncomfortable_environment', v)}
+                />
+                <LikertQuestion
+                  title="My daily work routine has been disrupted."
+                  name="employee_routine_disruption"
+                  value={formData.employee_routine_disruption}
+                  onChange={(v) => handleChange('employee_routine_disruption', v)}
+                />
+                <LikertQuestion
+                  title="I feel less motivated to work under current conditions."
+                  name="employee_low_motivation"
+                  value={formData.employee_low_motivation}
+                  onChange={(v) => handleChange('employee_low_motivation', v)}
                 />
               </>
             )}
@@ -249,16 +444,35 @@ export default function MultiStepForm() {
             {current.key === 'policy' && (
               <>
                 <LikertQuestion
-                  title="Current energy-saving policies are necessary."
+                  title="Energy-saving policies are necessary for the current situation."
                   name="policy_necessary"
                   value={formData.policy_necessary}
                   onChange={(v) => handleChange('policy_necessary', v)}
                 />
                 <LikertQuestion
-                  title="These policies create economic pressure on businesses."
-                  name="policy_pressure"
-                  value={formData.policy_pressure}
-                  onChange={(v) => handleChange('policy_pressure', v)}
+                  title="These policies negatively affect business performance."
+                  name="policy_business_negative"
+                  value={formData.policy_business_negative}
+                  onChange={(v) => handleChange('policy_business_negative', v)}
+                />
+                <LikertQuestion
+                  title="A balance between energy saving and economic activity is needed."
+                  name="policy_balance_needed"
+                  value={formData.policy_balance_needed}
+                  onChange={(v) => handleChange('policy_balance_needed', v)}
+                />
+
+                <SelectionQuestion
+                  title="Preferred policy solution"
+                  field="policy_preferred_solution"
+                  value={formData.policy_preferred_solution}
+                  onChange={handleChange}
+                  options={[
+                    ['continue_current_policy', 'Continue current policy'],
+                    ['relax_restrictions', 'Relax restrictions for supermarkets'],
+                    ['provide_subsidy_support', 'Provide subsidy/support'],
+                    ['flexible_business_hours', 'Flexible business hours'],
+                  ]}
                 />
               </>
             )}
@@ -348,6 +562,24 @@ function LikertQuestion({ title, name, value, onChange }) {
   );
 }
 
+function SelectionQuestion({ title, description, field, value, onChange, options }) {
+  return (
+    <QuestionCard title={title} description={description}>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {options.map(([optionValue, optionLabel]) => (
+          <RoleCard
+            key={optionValue}
+            active={value === optionValue}
+            title={optionLabel}
+            subtitle=""
+            onClick={() => onChange(field, optionValue)}
+          />
+        ))}
+      </div>
+    </QuestionCard>
+  );
+}
+
 function RoleCard({ active, title, subtitle, onClick }) {
   return (
     <motion.button
@@ -364,9 +596,11 @@ function RoleCard({ active, title, subtitle, onClick }) {
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-base font-semibold">{title}</p>
-          <p className={`mt-1 text-sm leading-6 ${active ? 'text-white/85' : 'text-slate-500'}`}>
-            {subtitle}
-          </p>
+          {subtitle ? (
+            <p className={`mt-1 text-sm leading-6 ${active ? 'text-white/85' : 'text-slate-500'}`}>
+              {subtitle}
+            </p>
+          ) : null}
         </div>
         <span
           className={`mt-1 h-4 w-4 rounded-full border-2 ${

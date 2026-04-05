@@ -33,24 +33,25 @@ export default function AdvancedAnalytics() {
   const summary = useMemo(() => {
     if (!data) return '';
 
-    const ownerBusiness = Number(data.businessImpactScore || 0);
+    const businessImpact = Number(data.businessImpactScore || 0);
     const employeeImpact = Number(data.employeeImpactScore || 0);
     const policyNecessary = Number(data.policyStats?.policy_necessary?.mean || 0);
-    const policyPressure = Number(data.policyStats?.policy_pressure?.mean || 0);
+    const policyNegative = Number(data.policyStats?.policy_business_negative?.mean || 0);
+    const policyBalance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
 
-    if (ownerBusiness > employeeImpact && policyPressure > policyNecessary) {
-      return 'The dataset suggests stronger financial pressure among owners, while policy burden is also perceived more strongly than policy necessity.';
+    if (businessImpact > employeeImpact && policyNegative > policyNecessary) {
+      return `Owner/manager-side effects appear stronger overall, while policies are also perceived as economically restrictive. Support for a balanced approach remains high at ${policyBalance.toFixed(2)}.`;
     }
 
-    if (employeeImpact > ownerBusiness && policyPressure > 3.5) {
-      return 'Employees appear to report stronger personal disruption, and respondents also indicate notable economic pressure from current policies.';
+    if (employeeImpact > businessImpact && policyNegative >= 3.5) {
+      return `Employee-side disruption appears stronger overall, especially in work stress, routine disruption, and reduced motivation. Respondents still strongly support a balanced policy approach.`;
     }
 
-    if (policyNecessary >= policyPressure) {
-      return 'Respondents show mixed but relatively stronger support for policy necessity, even though operational and workforce impacts remain visible.';
+    if (policyNecessary >= policyNegative) {
+      return `Respondents still show meaningful support for the necessity of energy-saving policies, although both business and employee impacts remain visible.`;
     }
 
-    return 'Both business and employee groups appear affected, with policy responses showing a balance between perceived necessity and economic pressure.';
+    return `The results indicate broad operational disruption, noticeable business and employee impacts, and clear support for balancing energy saving with economic continuity.`;
   }, [data]);
 
   if (loading) {
@@ -65,34 +66,55 @@ export default function AdvancedAnalytics() {
   }
 
   const typeVsPolicy = data?.typeVsPolicy || {};
+  const typeVsBalance = data?.typeVsBalance || {};
   const locationVsImpact = data?.locationVsImpact || {};
   const respondentCounts = data?.respondentCounts || {};
   const locationCounts = data?.locationCounts || {};
-  const generalStats = data?.generalStats || {};
+  const independentStats = data?.independentStats || {};
   const businessStats = data?.businessStats || {};
   const employeeStats = data?.employeeStats || {};
   const policyStats = data?.policyStats || {};
+  const yearsInServiceCounts = data?.yearsInServiceCounts || {};
+  const backupPowerCounts = data?.backupPowerCounts || {};
+  const policyPreferredSolutionCounts = data?.policyPreferredSolutionCounts || {};
+  const workloadChangeCounts = data?.workloadChangeCounts || {};
+  const costIncreaseLevelCounts = data?.costIncreaseLevelCounts || {};
+  const salesDecreaseLevelCounts = data?.salesDecreaseLevelCounts || {};
 
-  const typeLabels = Object.keys(typeVsPolicy);
+  const roleLabels = Object.keys(typeVsPolicy);
   const locationLabels = Object.keys(locationVsImpact);
+  const balanceRoleLabels = Object.keys(typeVsBalance);
   const likertKeys = ['1', '2', '3', '4', '5'];
 
-  const stackedTypeDatasets = likertKeys.map((likertValue, index) => ({
-    label: `Pressure ${likertValue}`,
-    data: typeLabels.map((label) => (typeVsPolicy[label] && typeVsPolicy[label][likertValue]) || 0),
+  const stackedPolicyDatasets = likertKeys.map((likertValue, index) => ({
+    label: `Policy Negative ${likertValue}`,
+    data: roleLabels.map((label) => (typeVsPolicy[label] && typeVsPolicy[label][likertValue]) || 0),
     backgroundColor: ['#dbeafe', '#93c5fd', '#60a5fa', '#2563eb', '#0d3b66'][index],
     borderRadius: 8,
   }));
 
   const stackedLocationDatasets = likertKeys.map((likertValue, index) => ({
-    label: `Impact ${likertValue}`,
+    label: `Interruptions ${likertValue}`,
     data: locationLabels.map((label) => (locationVsImpact[label] && locationVsImpact[label][likertValue]) || 0),
     backgroundColor: ['#ccfbf1', '#99f6e4', '#5eead4', '#14b8a6', '#0f766e'][index],
     borderRadius: 8,
   }));
 
+  const stackedBalanceDatasets = likertKeys.map((likertValue, index) => ({
+    label: `Balance ${likertValue}`,
+    data: balanceRoleLabels.map((label) => (typeVsBalance[label] && typeVsBalance[label][likertValue]) || 0),
+    backgroundColor: ['#fef3c7', '#fde68a', '#fcd34d', '#f59e0b', '#b45309'][index],
+    borderRadius: 8,
+  }));
+
   const comparisonData = {
-    labels: ['Business/Owner Impact', 'Employee Impact', 'Policy Necessary', 'Policy Pressure'],
+    labels: [
+      'Business Impact',
+      'Employee Impact',
+      'Policy Necessary',
+      'Policy Negative',
+      'Balance Needed',
+    ],
     datasets: [
       {
         label: 'Average Score',
@@ -100,33 +122,47 @@ export default function AdvancedAnalytics() {
           Number(data.businessImpactScore || 0),
           Number(data.employeeImpactScore || 0),
           Number(policyStats?.policy_necessary?.mean || 0),
-          Number(policyStats?.policy_pressure?.mean || 0),
+          Number(policyStats?.policy_business_negative?.mean || 0),
+          Number(policyStats?.policy_balance_needed?.mean || 0),
         ],
-        backgroundColor: ['#0d3b66', '#14b8a6', '#1d4ed8', '#f59e0b'],
+        backgroundColor: ['#0d3b66', '#14b8a6', '#1d4ed8', '#f59e0b', '#7c3aed'],
         borderRadius: 12,
       },
     ],
   };
 
   const businessVsEmployeeQuestionData = {
-    labels: ['Cost / Stress', 'Sales / Efficiency', 'Profit / Customer Handling'],
+    labels: [
+      'Cost / Stress',
+      'Sales Hours / Efficiency',
+      'Profit / Job Difficulty',
+      'Customer Handling',
+      'Environment / Routine',
+      'Motivation / Storage',
+    ],
     datasets: [
       {
-        label: 'Owners',
+        label: 'Owner / Manager',
         data: [
-          Number(businessStats?.business_cost?.mean || 0),
-          Number(businessStats?.business_sales?.mean || 0),
-          Number(businessStats?.business_profit?.mean || 0),
+          Number(businessStats?.business_cost_increase?.mean || 0),
+          Number(businessStats?.business_sales_reduced_hours?.mean || 0),
+          Number(businessStats?.business_profit_margin_decline?.mean || 0),
+          Number(businessStats?.business_evening_customer_flow?.mean || 0),
+          Number(businessStats?.business_backup_maintenance_cost?.mean || 0),
+          Number(businessStats?.business_inventory_difficulty?.mean || 0),
         ],
         backgroundColor: '#0d3b66',
         borderRadius: 10,
       },
       {
-        label: 'Employees',
+        label: 'Floor Employee',
         data: [
-          Number(employeeStats?.emp_stress?.mean || 0),
-          Number(employeeStats?.emp_efficiency?.mean || 0),
-          Number(employeeStats?.emp_customer_handling?.mean || 0),
+          Number(employeeStats?.employee_work_stress?.mean || 0),
+          Number(employeeStats?.employee_efficiency_decrease?.mean || 0),
+          Number(employeeStats?.employee_job_difficulty?.mean || 0),
+          Number(employeeStats?.employee_customer_handling?.mean || 0),
+          Number(employeeStats?.employee_uncomfortable_environment?.mean || 0),
+          Number(employeeStats?.employee_low_motivation?.mean || 0),
         ],
         backgroundColor: '#14b8a6',
         borderRadius: 10,
@@ -135,47 +171,141 @@ export default function AdvancedAnalytics() {
   };
 
   const respondentShareData = {
-    labels: ['Owners / Managers', 'Employees'],
+    labels: Object.keys(respondentCounts).map(formatLabel),
     datasets: [
       {
         label: 'Responses',
-        data: [
-          Number(respondentCounts?.owner || 0),
-          Number(respondentCounts?.employee || 0),
-        ],
-        backgroundColor: ['#0d3b66', '#14b8a6'],
+        data: Object.values(respondentCounts),
+        backgroundColor: ['#0d3b66', '#14b8a6', '#cbd5e1'],
         borderRadius: 12,
       },
     ],
   };
 
   const locationShareData = {
-    labels: ['Dhaka', 'Outside Dhaka'],
+    labels: Object.keys(locationCounts).map(formatLabel),
     datasets: [
       {
         label: 'Responses',
-        data: [
-          Number(locationCounts?.Dhaka || 0),
-          Number(locationCounts?.['Outside Dhaka'] || 0),
-        ],
+        data: Object.values(locationCounts),
         backgroundColor: ['#1d4ed8', '#f59e0b'],
         borderRadius: 12,
       },
     ],
   };
 
-  const generalMeanData = {
-    labels: ['Operations', 'Service Time', 'Working Hours', 'Customer Flow'],
+  const yearsInServiceData = {
+    labels: Object.keys(yearsInServiceCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Responses',
+        data: Object.values(yearsInServiceCounts),
+        backgroundColor: ['#0d3b66', '#1d4ed8', '#14b8a6'],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const backupPowerData = {
+    labels: Object.keys(backupPowerCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Responses',
+        data: Object.values(backupPowerCounts),
+        backgroundColor: ['#0d3b66', '#1d4ed8', '#94a3b8'],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const independentMeanData = {
+    labels: [
+      'Interruptions',
+      'Outage Duration',
+      'Unstable Supply',
+      'Fuel Price',
+      'Tariff Pressure',
+      'Early Closure',
+      'Reduced Hours',
+      'Planning Uncertainty',
+      'Backup Dependence',
+      'Policy Flexibility',
+    ],
     datasets: [
       {
         label: 'Mean Score',
         data: [
-          Number(generalStats?.op_negative_impact?.mean || 0),
-          Number(generalStats?.op_service_time?.mean || 0),
-          Number(generalStats?.op_working_hours?.mean || 0),
-          Number(generalStats?.op_customer_flow?.mean || 0),
+          Number(independentStats?.iv_power_interruptions?.mean || 0),
+          Number(independentStats?.iv_outage_duration?.mean || 0),
+          Number(independentStats?.iv_unstable_electricity?.mean || 0),
+          Number(independentStats?.iv_fuel_price_pressure?.mean || 0),
+          Number(independentStats?.iv_tariff_pressure?.mean || 0),
+          Number(independentStats?.iv_early_closure?.mean || 0),
+          Number(independentStats?.iv_reduced_working_hours?.mean || 0),
+          Number(independentStats?.iv_daily_uncertainty?.mean || 0),
+          Number(independentStats?.iv_backup_dependence?.mean || 0),
+          Number(independentStats?.iv_policy_flexibility?.mean || 0),
         ],
-        backgroundColor: ['#0d3b66', '#1d4ed8', '#14b8a6', '#f59e0b'],
+        backgroundColor: [
+          '#0d3b66',
+          '#1d4ed8',
+          '#2563eb',
+          '#14b8a6',
+          '#0f766e',
+          '#f59e0b',
+          '#f97316',
+          '#8b5cf6',
+          '#7c3aed',
+          '#64748b',
+        ],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const workloadData = {
+    labels: Object.keys(workloadChangeCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Floor Employee Responses',
+        data: Object.values(workloadChangeCounts),
+        backgroundColor: ['#0d3b66', '#94a3b8', '#14b8a6'],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const costLevelData = {
+    labels: Object.keys(costIncreaseLevelCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Owner / Manager Responses',
+        data: Object.values(costIncreaseLevelCounts),
+        backgroundColor: ['#cbd5e1', '#93c5fd', '#2563eb', '#0d3b66'],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const salesLevelData = {
+    labels: Object.keys(salesDecreaseLevelCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Owner / Manager Responses',
+        data: Object.values(salesDecreaseLevelCounts),
+        backgroundColor: ['#d1fae5', '#86efac', '#f59e0b', '#dc2626'],
+        borderRadius: 12,
+      },
+    ],
+  };
+
+  const policySolutionData = {
+    labels: Object.keys(policyPreferredSolutionCounts).map(formatLabel),
+    datasets: [
+      {
+        label: 'Responses',
+        data: Object.values(policyPreferredSolutionCounts),
+        backgroundColor: ['#0d3b66', '#14b8a6', '#f59e0b', '#7c3aed'],
         borderRadius: 12,
       },
     ],
@@ -206,77 +336,74 @@ export default function AdvancedAnalytics() {
             </p>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
-            <MiniKpi
-              label="Owner Impact"
-              value={Number(data.businessImpactScore || 0).toFixed(2)}
-            />
-            <MiniKpi
-              label="Employee Impact"
-              value={Number(data.employeeImpactScore || 0).toFixed(2)}
-            />
+          <div className="mt-8 grid gap-4 md:grid-cols-5">
+            <MiniKpi label="Business Impact" value={Number(data.businessImpactScore || 0).toFixed(2)} />
+            <MiniKpi label="Employee Impact" value={Number(data.employeeImpactScore || 0).toFixed(2)} />
             <MiniKpi
               label="Policy Necessary"
               value={Number(policyStats?.policy_necessary?.mean || 0).toFixed(2)}
             />
             <MiniKpi
-              label="Policy Pressure"
-              value={Number(policyStats?.policy_pressure?.mean || 0).toFixed(2)}
+              label="Policy Negative"
+              value={Number(policyStats?.policy_business_negative?.mean || 0).toFixed(2)}
+            />
+            <MiniKpi
+              label="Balance Needed"
+              value={Number(policyStats?.policy_balance_needed?.mean || 0).toFixed(2)}
             />
           </div>
         </section>
 
         <section className="grid gap-6 xl:grid-cols-2">
           <AnalyticsCard
-            title="Respondent Type vs Policy Pressure"
-            subtitle="Stacked distribution of pressure perception across owner and employee groups"
+            title="Role vs Policy Negative Effect"
+            subtitle="Stacked distribution of policy negativity across respondent groups"
           >
             <Bar
-              data={{ labels: typeLabels, datasets: stackedTypeDatasets }}
+              data={{ labels: roleLabels.map(formatLabel), datasets: stackedPolicyDatasets }}
               options={stackedChartOptions()}
             />
           </AnalyticsCard>
 
           <AnalyticsCard
-            title="Location vs Negative Impact"
-            subtitle="Stacked distribution of impact perception by geographic group"
+            title="Location vs Power Interruptions"
+            subtitle="Stacked distribution of interruption intensity by location"
           >
             <Bar
-              data={{ labels: locationLabels, datasets: stackedLocationDatasets }}
+              data={{ labels: locationLabels.map(formatLabel), datasets: stackedLocationDatasets }}
+              options={stackedChartOptions()}
+            />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Role vs Balance Needed"
+            subtitle="Stacked distribution of support for balanced policy"
+          >
+            <Bar
+              data={{ labels: balanceRoleLabels.map(formatLabel), datasets: stackedBalanceDatasets }}
               options={stackedChartOptions()}
             />
           </AnalyticsCard>
 
           <AnalyticsCard
             title="Comparative Score Overview"
-            subtitle="Average score comparison across core study dimensions"
+            subtitle="Average score comparison across major study dimensions"
           >
-            <Bar
-              data={comparisonData}
-              options={singleBarOptions(5)}
-            />
+            <Bar data={comparisonData} options={singleBarOptions(5)} />
           </AnalyticsCard>
 
           <AnalyticsCard
-            title="Owners vs Employees"
-            subtitle="Parallel comparison of business-related and employee-related dimensions"
+            title="Owner/Manager vs Floor Employee"
+            subtitle="Comparison of business-side and employee-side dimensions"
           >
             <Bar
               data={businessVsEmployeeQuestionData}
               options={{
                 responsive: true,
-                plugins: {
-                  legend: { position: 'top' },
-                },
+                plugins: { legend: { position: 'top' } },
                 scales: {
-                  y: {
-                    beginAtZero: true,
-                    max: 5,
-                    grid: { color: '#e2e8f0' },
-                  },
-                  x: {
-                    grid: { display: false },
-                  },
+                  y: { beginAtZero: true, max: 5, grid: { color: '#e2e8f0' } },
+                  x: { grid: { display: false } },
                 },
               }}
             />
@@ -284,33 +411,66 @@ export default function AdvancedAnalytics() {
 
           <AnalyticsCard
             title="Response Composition"
-            subtitle="Distribution of submitted responses by respondent category"
+            subtitle="Distribution of submitted responses by role"
           >
-            <Bar
-              data={respondentShareData}
-              options={singleBarOptions()}
-            />
+            <Bar data={respondentShareData} options={singleBarOptions()} />
           </AnalyticsCard>
 
           <AnalyticsCard
             title="Location Composition"
             subtitle="Distribution of responses by place of operation"
           >
-            <Bar
-              data={locationShareData}
-              options={singleBarOptions()}
-            />
+            <Bar data={locationShareData} options={singleBarOptions()} />
           </AnalyticsCard>
 
           <AnalyticsCard
-            title="General Impact Mean Scores"
-            subtitle="Operational effects reported across the four general research questions"
+            title="Years in Business/Service"
+            subtitle="Experience distribution of respondents"
+          >
+            <Bar data={yearsInServiceData} options={singleBarOptions()} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Primary Backup Power Source"
+            subtitle="Backup arrangement used by respondents"
+          >
+            <Bar data={backupPowerData} options={singleBarOptions()} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Independent Variable Mean Scores"
+            subtitle="Average effect scores across the 10 energy crisis factors"
             className="xl:col-span-2"
           >
-            <Bar
-              data={generalMeanData}
-              options={singleBarOptions(5)}
-            />
+            <Bar data={independentMeanData} options={singleBarOptions(5)} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Employee Workload Change"
+            subtitle="How workload changed under current energy conditions"
+          >
+            <Bar data={workloadData} options={singleBarOptions()} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Operational Cost Increase Level"
+            subtitle="Owner/manager perception of cost escalation"
+          >
+            <Bar data={costLevelData} options={singleBarOptions()} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Sales Decrease Level"
+            subtitle="Owner/manager perception of sales reduction"
+          >
+            <Bar data={salesLevelData} options={singleBarOptions()} />
+          </AnalyticsCard>
+
+          <AnalyticsCard
+            title="Preferred Policy Solution"
+            subtitle="Respondents’ preferred mitigation direction"
+          >
+            <Bar data={policySolutionData} options={singleBarOptions()} />
           </AnalyticsCard>
         </section>
       </AdminAnalyticsShell>
@@ -326,18 +486,14 @@ function AdminAnalyticsShell({ children }) {
         <div className="absolute inset-0 opacity-[0.05] [background-image:linear-gradient(to_right,#0f172a_1px,transparent_1px),linear-gradient(to_bottom,#0f172a_1px,transparent_1px)] [background-size:72px_72px]" />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl">
-        {children}
-      </div>
+      <div className="relative z-10 mx-auto max-w-7xl">{children}</div>
     </div>
   );
 }
 
 function AnalyticsCard({ title, subtitle, children, className = '' }) {
   return (
-    <div
-      className={`rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl ${className}`}
-    >
+    <div className={`rounded-[2rem] border border-white/70 bg-white/80 p-6 shadow-xl shadow-slate-200/50 backdrop-blur-xl ${className}`}>
       <h3 className="text-xl font-bold text-slate-900">{title}</h3>
       <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
       <div className="mt-6">{children}</div>
@@ -393,4 +549,11 @@ function singleBarOptions(max = undefined) {
       },
     },
   };
+}
+
+function formatLabel(value) {
+  if (!value) return '';
+  return String(value)
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
