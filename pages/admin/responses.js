@@ -8,16 +8,72 @@ export const getServerSideProps = async (ctx) => requireAdmin(ctx);
 export default function ResponsesPage() {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [workingId, setWorkingId] = useState(null);
 
   useEffect(() => {
-    async function fetchData() {
-      const res = await fetch('/api/responses');
-      const json = await res.json();
-      setResponses(json.data || []);
-      setLoading(false);
-    }
     fetchData();
   }, []);
+
+  async function fetchData() {
+    const res = await fetch('/api/responses');
+    const json = await res.json();
+    setResponses(json.data || []);
+    setLoading(false);
+  }
+
+  async function toggleReviewed(id, currentValue) {
+    try {
+      setWorkingId(id);
+
+      const res = await fetch('/api/response-actions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          is_reviewed: !currentValue,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update review status');
+      }
+
+      setResponses((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, is_reviewed: !currentValue } : item
+        )
+      );
+    } catch (err) {
+      alert(err.message || 'Failed to update');
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
+  async function handleDelete(id) {
+    const confirmed = window.confirm('Are you sure you want to delete this response?');
+    if (!confirmed) return;
+
+    try {
+      setWorkingId(id);
+
+      const res = await fetch('/api/response-actions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete response');
+      }
+
+      setResponses((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      alert(err.message || 'Delete failed');
+    } finally {
+      setWorkingId(null);
+    }
+  }
 
   return (
     <Layout title="Responses">
@@ -39,7 +95,7 @@ export default function ResponsesPage() {
                   Submitted Responses
                 </h1>
                 <p className="mt-3 text-sm leading-7 text-slate-600">
-                  Review submitted responses from owner/manager and floor employee groups in a structured format.
+                  Review, mark, and delete submitted responses in a structured format.
                 </p>
               </div>
 
@@ -77,13 +133,13 @@ export default function ResponsesPage() {
                         Location
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                        Backup Power
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                        Years
+                        Status
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                         Submitted
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        Actions
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                         Details
@@ -103,14 +159,40 @@ export default function ResponsesPage() {
                         <td className="px-4 py-4 text-sm text-slate-700">
                           {formatLabel(resp.location)}
                         </td>
-                        <td className="px-4 py-4 text-sm text-slate-700">
-                          {formatLabel(resp.backup_power_source)}
-                        </td>
-                        <td className="px-4 py-4 text-sm text-slate-700">
-                          {formatLabel(resp.years_in_service)}
+                        <td className="px-4 py-4 text-sm">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                              resp.is_reviewed
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-amber-100 text-amber-700'
+                            }`}
+                          >
+                            {resp.is_reviewed ? 'Reviewed' : 'Pending'}
+                          </span>
                         </td>
                         <td className="px-4 py-4 text-sm text-slate-700">
                           {new Date(resp.submitted_at).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-4 text-sm">
+                          <div className="flex flex-col gap-2">
+                            <button
+                              type="button"
+                              disabled={workingId === resp.id}
+                              onClick={() => toggleReviewed(resp.id, resp.is_reviewed)}
+                              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              {resp.is_reviewed ? 'Mark Pending' : 'Mark Reviewed'}
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={workingId === resp.id}
+                              onClick={() => handleDelete(resp.id)}
+                              className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                         <td className="px-4 py-4 text-sm">
                           <details className="group">
