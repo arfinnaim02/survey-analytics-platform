@@ -17,6 +17,12 @@ ChartJS.register(BarElement, ArcElement, CategoryScale, LinearScale, Tooltip, Le
 
 export const getServerSideProps = async (ctx) => requireAdmin(ctx);
 
+function normalizeLikertMean(value) {
+  const num = Number(value || 0);
+  if (!num) return 0;
+  return 6 - num;
+}
+
 export default function AdminDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -34,11 +40,11 @@ export default function AdminDashboard() {
   const findings = useMemo(() => {
     if (!data) return [];
 
-    const business = Number(data.businessImpactScore || 0);
-    const employee = Number(data.employeeImpactScore || 0);
-    const policyNeed = Number(data.policyStats?.policy_necessary?.mean || 0);
-    const policyNegative = Number(data.policyStats?.policy_business_negative?.mean || 0);
-    const policyBalance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
+    const business = normalizeLikertMean(data.businessImpactScore);
+    const employee = normalizeLikertMean(data.employeeImpactScore);
+    const policyNeed = normalizeLikertMean(data.policyStats?.policy_necessary?.mean);
+    const policyNegative = normalizeLikertMean(data.policyStats?.policy_business_negative?.mean);
+    const policyBalance = normalizeLikertMean(data.policyStats?.policy_balance_needed?.mean);
 
     const ownerManagerCount = Number(data.respondentCounts?.owner_manager || 0);
     const employeeCount = Number(data.respondentCounts?.floor_employee || 0);
@@ -73,10 +79,10 @@ export default function AdminDashboard() {
   const executiveSummary = useMemo(() => {
     if (!data) return '';
 
-    const business = Number(data.businessImpactScore || 0);
-    const employee = Number(data.employeeImpactScore || 0);
-    const negative = Number(data.policyStats?.policy_business_negative?.mean || 0);
-    const balance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
+    const business = normalizeLikertMean(data.businessImpactScore);
+    const employee = normalizeLikertMean(data.employeeImpactScore);
+    const negative = normalizeLikertMean(data.policyStats?.policy_business_negative?.mean);
+    const balance = normalizeLikertMean(data.policyStats?.policy_balance_needed?.mean);
 
     if (business > employee) {
       return `The current dataset suggests stronger business-side effects among owners and managers, with policy-related business burden also remaining visible. Demand for a balanced policy approach is strong at ${balance.toFixed(2)}.`;
@@ -166,19 +172,19 @@ export default function AdminDashboard() {
             <KpiCard label="Total Responses" value={totalResponses} />
             <KpiCard
               label="Business Impact Score"
-              value={Number(businessImpactScore || 0).toFixed(2)}
+              value={normalizeLikertMean(businessImpactScore).toFixed(2)}
             />
             <KpiCard
               label="Employee Impact Score"
-              value={Number(employeeImpactScore || 0).toFixed(2)}
+              value={normalizeLikertMean(employeeImpactScore).toFixed(2)}
             />
             <KpiCard
               label="Policy Negative Mean"
-              value={Number(policyStats?.policy_business_negative?.mean || 0).toFixed(2)}
+              value={normalizeLikertMean(policyStats?.policy_business_negative?.mean).toFixed(2)}
             />
             <KpiCard
               label="Balance Needed Mean"
-              value={Number(policyStats?.policy_balance_needed?.mean || 0).toFixed(2)}
+              value={normalizeLikertMean(policyStats?.policy_balance_needed?.mean).toFixed(2)}
             />
           </div>
 
@@ -292,16 +298,16 @@ export default function AdminDashboard() {
                   {
                     label: 'Mean Score',
                     data: [
-                      independentStats?.iv_power_interruptions?.mean || 0,
-                      independentStats?.iv_outage_duration?.mean || 0,
-                      independentStats?.iv_unstable_electricity?.mean || 0,
-                      independentStats?.iv_fuel_price_pressure?.mean || 0,
-                      independentStats?.iv_tariff_pressure?.mean || 0,
-                      independentStats?.iv_early_closure?.mean || 0,
-                      independentStats?.iv_reduced_working_hours?.mean || 0,
-                      independentStats?.iv_daily_uncertainty?.mean || 0,
-                      independentStats?.iv_backup_dependence?.mean || 0,
-                      independentStats?.iv_policy_flexibility?.mean || 0,
+                      normalizeLikertMean(independentStats?.iv_power_interruptions?.mean),
+                      normalizeLikertMean(independentStats?.iv_outage_duration?.mean),
+                      normalizeLikertMean(independentStats?.iv_unstable_electricity?.mean),
+                      normalizeLikertMean(independentStats?.iv_fuel_price_pressure?.mean),
+                      normalizeLikertMean(independentStats?.iv_tariff_pressure?.mean),
+                      normalizeLikertMean(independentStats?.iv_early_closure?.mean),
+                      normalizeLikertMean(independentStats?.iv_reduced_working_hours?.mean),
+                      normalizeLikertMean(independentStats?.iv_daily_uncertainty?.mean),
+                      normalizeLikertMean(independentStats?.iv_backup_dependence?.mean),
+                      normalizeLikertMean(independentStats?.iv_policy_flexibility?.mean),
                     ],
                     backgroundColor: [
                       '#0d3b66',

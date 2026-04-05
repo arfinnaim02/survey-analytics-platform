@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Layout from '../../components/Layout';
 import { requireAdmin } from '../../lib/auth';
 import AdminNav from '../../components/AdminNav';
@@ -9,6 +9,7 @@ export default function ResponsesPage() {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [workingId, setWorkingId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -19,6 +20,25 @@ export default function ResponsesPage() {
     const json = await res.json();
     setResponses(json.data || []);
     setLoading(false);
+  }
+
+  const allVisibleIds = useMemo(() => responses.map((r) => r.id), [responses]);
+
+  const isAllSelected =
+    responses.length > 0 && allVisibleIds.every((id) => selectedIds.includes(id));
+
+  function toggleSelectOne(id) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAll() {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(allVisibleIds);
+    }
   }
 
   async function toggleReviewed(id, currentValue) {
@@ -68,8 +88,78 @@ export default function ResponsesPage() {
       }
 
       setResponses((prev) => prev.filter((item) => item.id !== id));
+      setSelectedIds((prev) => prev.filter((item) => item !== id));
     } catch (err) {
       alert(err.message || 'Delete failed');
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
+  async function handleBulkReview(isReviewed) {
+    if (selectedIds.length === 0) {
+      alert('Please select at least one response.');
+      return;
+    }
+
+    try {
+      setWorkingId('bulk-review');
+
+      const res = await fetch('/api/response-actions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ids: selectedIds,
+          is_reviewed: isReviewed,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Bulk review update failed');
+      }
+
+      setResponses((prev) =>
+        prev.map((item) =>
+          selectedIds.includes(item.id)
+            ? { ...item, is_reviewed: isReviewed }
+            : item
+        )
+      );
+    } catch (err) {
+      alert(err.message || 'Bulk action failed');
+    } finally {
+      setWorkingId(null);
+    }
+  }
+
+  async function handleBulkDelete() {
+    if (selectedIds.length === 0) {
+      alert('Please select at least one response.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Are you sure you want to delete ${selectedIds.length} selected response(s)?`
+    );
+    if (!confirmed) return;
+
+    try {
+      setWorkingId('bulk-delete');
+
+      const res = await fetch('/api/response-actions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: selectedIds }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Bulk delete failed');
+      }
+
+      setResponses((prev) => prev.filter((item) => !selectedIds.includes(item.id)));
+      setSelectedIds([]);
+    } catch (err) {
+      alert(err.message || 'Bulk delete failed');
     } finally {
       setWorkingId(null);
     }
@@ -110,6 +200,48 @@ export default function ResponsesPage() {
             </div>
           </section>
 
+          <section className="mb-6 rounded-[2rem] border border-white/70 bg-white/80 p-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl md:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  Selected: {selectedIds.length}
+                </p>
+                <p className="text-sm text-slate-500">
+                  Use bulk actions to review or remove multiple responses at once.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  disabled={workingId === 'bulk-review' || workingId === 'bulk-delete'}
+                  onClick={() => handleBulkReview(true)}
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  Mark Reviewed
+                </button>
+
+                <button
+                  type="button"
+                  disabled={workingId === 'bulk-review' || workingId === 'bulk-delete'}
+                  onClick={() => handleBulkReview(false)}
+                  className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
+                >
+                  Mark Pending
+                </button>
+
+                <button
+                  type="button"
+                  disabled={workingId === 'bulk-review' || workingId === 'bulk-delete'}
+                  onClick={handleBulkDelete}
+                  className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                >
+                  Delete Selected
+                </button>
+              </div>
+            </div>
+          </section>
+
           <section className="rounded-[2rem] border border-white/70 bg-white/80 p-4 shadow-2xl shadow-slate-200/50 backdrop-blur-xl md:p-6">
             {loading ? (
               <p className="text-slate-600">Loading responses...</p>
@@ -120,6 +252,14 @@ export default function ResponsesPage() {
                 <table className="min-w-full bg-white">
                   <thead className="bg-slate-50">
                     <tr>
+                      <th className="px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={toggleSelectAll}
+                          className="h-4 w-4 rounded border-slate-300"
+                        />
+                      </th>
                       <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                         ID
                       </th>
@@ -149,6 +289,14 @@ export default function ResponsesPage() {
                   <tbody>
                     {responses.map((resp) => (
                       <tr key={resp.id} className="border-t border-slate-200 align-top">
+                        <td className="px-4 py-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.includes(resp.id)}
+                            onChange={() => toggleSelectOne(resp.id)}
+                            className="h-4 w-4 rounded border-slate-300"
+                          />
+                        </td>
                         <td className="px-4 py-4 text-sm text-slate-700">{resp.id}</td>
                         <td className="px-4 py-4 text-sm font-medium text-slate-900">
                           {formatLabel(resp.role)}
@@ -216,16 +364,16 @@ export default function ResponsesPage() {
                                 <ResponseSection
                                   title="Energy Crisis Factors"
                                   rows={[
-                                    ['Frequent electricity interruptions affect daily operations', resp.iv_power_interruptions],
-                                    ['Power outages last for long durations and disrupt service', resp.iv_outage_duration],
-                                    ['Lack of stable electricity affects business continuity', resp.iv_unstable_electricity],
-                                    ['Rising fuel/oil prices increase operational pressure', resp.iv_fuel_price_pressure],
-                                    ['Electricity tariff increases make utility costs difficult to manage', resp.iv_tariff_pressure],
-                                    ['Early shop closure policies restrict profitable business hours', resp.iv_early_closure],
-                                    ['Reduced working hours (9–4) limit customer flow', resp.iv_reduced_working_hours],
-                                    ['Energy supply issues create uncertainty in daily planning', resp.iv_daily_uncertainty],
-                                    ['The energy crisis increases dependence on backup power systems', resp.iv_backup_dependence],
-                                    ['Energy-related policies restrict business flexibility', resp.iv_policy_flexibility],
+                                    ['Frequent electricity interruptions affect daily operations', formatLikert(resp.iv_power_interruptions)],
+                                    ['Power outages last for long durations and disrupt service', formatLikert(resp.iv_outage_duration)],
+                                    ['Lack of stable electricity affects business continuity', formatLikert(resp.iv_unstable_electricity)],
+                                    ['Rising fuel/oil prices increase operational pressure', formatLikert(resp.iv_fuel_price_pressure)],
+                                    ['Electricity tariff increases make utility costs difficult to manage', formatLikert(resp.iv_tariff_pressure)],
+                                    ['Early shop closure policies restrict profitable business hours', formatLikert(resp.iv_early_closure)],
+                                    ['Reduced working hours (9–4) limit customer flow', formatLikert(resp.iv_reduced_working_hours)],
+                                    ['Energy supply issues create uncertainty in daily planning', formatLikert(resp.iv_daily_uncertainty)],
+                                    ['The energy crisis increases dependence on backup power systems', formatLikert(resp.iv_backup_dependence)],
+                                    ['Energy-related policies restrict business flexibility', formatLikert(resp.iv_policy_flexibility)],
                                   ]}
                                 />
 
@@ -235,12 +383,12 @@ export default function ResponsesPage() {
                                     rows={[
                                       ['Operational cost increase level', formatLabel(resp.business_cost_increase_level)],
                                       ['Sales decrease level', formatLabel(resp.business_sales_decrease_level)],
-                                      ['Operational costs have increased due to the energy crisis', resp.business_cost_increase],
-                                      ['Daily sales have decreased due to reduced business hours', resp.business_sales_reduced_hours],
-                                      ['Profit margins have declined', resp.business_profit_margin_decline],
-                                      ['Customer flow has decreased during evening hours', resp.business_evening_customer_flow],
-                                      ['Inventory management (refrigeration/storage) has become difficult', resp.business_inventory_difficulty],
-                                      ['Maintenance costs for backup systems have increased', resp.business_backup_maintenance_cost],
+                                      ['Operational costs have increased due to the energy crisis', formatLikert(resp.business_cost_increase)],
+                                      ['Daily sales have decreased due to reduced business hours', formatLikert(resp.business_sales_reduced_hours)],
+                                      ['Profit margins have declined', formatLikert(resp.business_profit_margin_decline)],
+                                      ['Customer flow has decreased during evening hours', formatLikert(resp.business_evening_customer_flow)],
+                                      ['Inventory management (refrigeration/storage) has become difficult', formatLikert(resp.business_inventory_difficulty)],
+                                      ['Maintenance costs for backup systems have increased', formatLikert(resp.business_backup_maintenance_cost)],
                                     ]}
                                   />
                                 )}
@@ -250,13 +398,13 @@ export default function ResponsesPage() {
                                     title="Employee Impact"
                                     rows={[
                                       ['Workload change', formatLabel(resp.employee_workload_change)],
-                                      ['The energy crisis has increased my work stress', resp.employee_work_stress],
-                                      ['My work efficiency has decreased', resp.employee_efficiency_decrease],
-                                      ['Power-related issues make my job more difficult', resp.employee_job_difficulty],
-                                      ['Customer handling becomes more difficult during disruptions', resp.employee_customer_handling],
-                                      ['The working environment becomes uncomfortable during outages', resp.employee_uncomfortable_environment],
-                                      ['My daily work routine has been disrupted', resp.employee_routine_disruption],
-                                      ['I feel less motivated to work under current conditions', resp.employee_low_motivation],
+                                      ['The energy crisis has increased my work stress', formatLikert(resp.employee_work_stress)],
+                                      ['My work efficiency has decreased', formatLikert(resp.employee_efficiency_decrease)],
+                                      ['Power-related issues make my job more difficult', formatLikert(resp.employee_job_difficulty)],
+                                      ['Customer handling becomes more difficult during disruptions', formatLikert(resp.employee_customer_handling)],
+                                      ['The working environment becomes uncomfortable during outages', formatLikert(resp.employee_uncomfortable_environment)],
+                                      ['My daily work routine has been disrupted', formatLikert(resp.employee_routine_disruption)],
+                                      ['I feel less motivated to work under current conditions', formatLikert(resp.employee_low_motivation)],
                                     ]}
                                   />
                                 )}
@@ -264,9 +412,9 @@ export default function ResponsesPage() {
                                 <ResponseSection
                                   title="Policy Perception & Mitigation"
                                   rows={[
-                                    ['Energy-saving policies are necessary for the current situation', resp.policy_necessary],
-                                    ['These policies negatively affect business performance', resp.policy_business_negative],
-                                    ['A balance between energy saving and economic activity is needed', resp.policy_balance_needed],
+                                    ['Energy-saving policies are necessary for the current situation', formatLikert(resp.policy_necessary)],
+                                    ['These policies negatively affect business performance', formatLikert(resp.policy_business_negative)],
+                                    ['A balance between energy saving and economic activity is needed', formatLikert(resp.policy_balance_needed)],
                                     ['Preferred policy solution', formatLabel(resp.policy_preferred_solution)],
                                   ]}
                                 />
@@ -323,4 +471,15 @@ function formatLabel(value) {
   return String(value)
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatLikert(value) {
+  const likertMap = {
+    1: 'Strongly Agree',
+    2: 'Agree',
+    3: 'Neutral',
+    4: 'Disagree',
+    5: 'Strongly Disagree',
+  };
+  return likertMap[value] || value || '—';
 }

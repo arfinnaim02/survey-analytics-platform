@@ -16,6 +16,12 @@ ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export const getServerSideProps = async (ctx) => requireAdmin(ctx);
 
+function normalizeLikertMean(value) {
+  const num = Number(value || 0);
+  if (!num) return 0;
+  return 6 - num;
+}
+
 export default function AdvancedAnalytics() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,11 +39,11 @@ export default function AdvancedAnalytics() {
   const summary = useMemo(() => {
     if (!data) return '';
 
-    const businessImpact = Number(data.businessImpactScore || 0);
-    const employeeImpact = Number(data.employeeImpactScore || 0);
-    const policyNecessary = Number(data.policyStats?.policy_necessary?.mean || 0);
-    const policyNegative = Number(data.policyStats?.policy_business_negative?.mean || 0);
-    const policyBalance = Number(data.policyStats?.policy_balance_needed?.mean || 0);
+    const businessImpact = normalizeLikertMean(data.businessImpactScore);
+    const employeeImpact = normalizeLikertMean(data.employeeImpactScore);
+    const policyNecessary = normalizeLikertMean(data.policyStats?.policy_necessary?.mean);
+    const policyNegative = normalizeLikertMean(data.policyStats?.policy_business_negative?.mean);
+    const policyBalance = normalizeLikertMean(data.policyStats?.policy_balance_needed?.mean);
 
     if (businessImpact > employeeImpact && policyNegative > policyNecessary) {
       return `Owner/manager-side effects appear stronger overall, while policies are also perceived as economically restrictive. Support for a balanced approach remains high at ${policyBalance.toFixed(2)}.`;
@@ -119,11 +125,11 @@ export default function AdvancedAnalytics() {
       {
         label: 'Average Score',
         data: [
-          Number(data.businessImpactScore || 0),
-          Number(data.employeeImpactScore || 0),
-          Number(policyStats?.policy_necessary?.mean || 0),
-          Number(policyStats?.policy_business_negative?.mean || 0),
-          Number(policyStats?.policy_balance_needed?.mean || 0),
+          normalizeLikertMean(data.businessImpactScore),
+          normalizeLikertMean(data.employeeImpactScore),
+          normalizeLikertMean(policyStats?.policy_necessary?.mean),
+          normalizeLikertMean(policyStats?.policy_business_negative?.mean),
+          normalizeLikertMean(policyStats?.policy_balance_needed?.mean),
         ],
         backgroundColor: ['#0d3b66', '#14b8a6', '#1d4ed8', '#f59e0b', '#7c3aed'],
         borderRadius: 12,
@@ -144,12 +150,12 @@ export default function AdvancedAnalytics() {
       {
         label: 'Owner / Manager',
         data: [
-          Number(businessStats?.business_cost_increase?.mean || 0),
-          Number(businessStats?.business_sales_reduced_hours?.mean || 0),
-          Number(businessStats?.business_profit_margin_decline?.mean || 0),
-          Number(businessStats?.business_evening_customer_flow?.mean || 0),
-          Number(businessStats?.business_backup_maintenance_cost?.mean || 0),
-          Number(businessStats?.business_inventory_difficulty?.mean || 0),
+          normalizeLikertMean(businessStats?.business_cost_increase?.mean),
+          normalizeLikertMean(businessStats?.business_sales_reduced_hours?.mean),
+          normalizeLikertMean(businessStats?.business_profit_margin_decline?.mean),
+          normalizeLikertMean(businessStats?.business_evening_customer_flow?.mean),
+          normalizeLikertMean(businessStats?.business_backup_maintenance_cost?.mean),
+          normalizeLikertMean(businessStats?.business_inventory_difficulty?.mean),
         ],
         backgroundColor: '#0d3b66',
         borderRadius: 10,
@@ -157,12 +163,12 @@ export default function AdvancedAnalytics() {
       {
         label: 'Floor Employee',
         data: [
-          Number(employeeStats?.employee_work_stress?.mean || 0),
-          Number(employeeStats?.employee_efficiency_decrease?.mean || 0),
-          Number(employeeStats?.employee_job_difficulty?.mean || 0),
-          Number(employeeStats?.employee_customer_handling?.mean || 0),
-          Number(employeeStats?.employee_uncomfortable_environment?.mean || 0),
-          Number(employeeStats?.employee_low_motivation?.mean || 0),
+          normalizeLikertMean(employeeStats?.employee_work_stress?.mean),
+          normalizeLikertMean(employeeStats?.employee_efficiency_decrease?.mean),
+          normalizeLikertMean(employeeStats?.employee_job_difficulty?.mean),
+          normalizeLikertMean(employeeStats?.employee_customer_handling?.mean),
+          normalizeLikertMean(employeeStats?.employee_uncomfortable_environment?.mean),
+          normalizeLikertMean(employeeStats?.employee_low_motivation?.mean),
         ],
         backgroundColor: '#14b8a6',
         borderRadius: 10,
@@ -235,16 +241,16 @@ export default function AdvancedAnalytics() {
       {
         label: 'Mean Score',
         data: [
-          Number(independentStats?.iv_power_interruptions?.mean || 0),
-          Number(independentStats?.iv_outage_duration?.mean || 0),
-          Number(independentStats?.iv_unstable_electricity?.mean || 0),
-          Number(independentStats?.iv_fuel_price_pressure?.mean || 0),
-          Number(independentStats?.iv_tariff_pressure?.mean || 0),
-          Number(independentStats?.iv_early_closure?.mean || 0),
-          Number(independentStats?.iv_reduced_working_hours?.mean || 0),
-          Number(independentStats?.iv_daily_uncertainty?.mean || 0),
-          Number(independentStats?.iv_backup_dependence?.mean || 0),
-          Number(independentStats?.iv_policy_flexibility?.mean || 0),
+          normalizeLikertMean(independentStats?.iv_power_interruptions?.mean),
+          normalizeLikertMean(independentStats?.iv_outage_duration?.mean),
+          normalizeLikertMean(independentStats?.iv_unstable_electricity?.mean),
+          normalizeLikertMean(independentStats?.iv_fuel_price_pressure?.mean),
+          normalizeLikertMean(independentStats?.iv_tariff_pressure?.mean),
+          normalizeLikertMean(independentStats?.iv_early_closure?.mean),
+          normalizeLikertMean(independentStats?.iv_reduced_working_hours?.mean),
+          normalizeLikertMean(independentStats?.iv_daily_uncertainty?.mean),
+          normalizeLikertMean(independentStats?.iv_backup_dependence?.mean),
+          normalizeLikertMean(independentStats?.iv_policy_flexibility?.mean),
         ],
         backgroundColor: [
           '#0d3b66',
@@ -337,19 +343,19 @@ export default function AdvancedAnalytics() {
           </div>
 
           <div className="mt-8 grid gap-4 md:grid-cols-5">
-            <MiniKpi label="Business Impact" value={Number(data.businessImpactScore || 0).toFixed(2)} />
-            <MiniKpi label="Employee Impact" value={Number(data.employeeImpactScore || 0).toFixed(2)} />
+            <MiniKpi label="Business Impact" value={normalizeLikertMean(data.businessImpactScore).toFixed(2)} />
+            <MiniKpi label="Employee Impact" value={normalizeLikertMean(data.employeeImpactScore).toFixed(2)} />
             <MiniKpi
               label="Policy Necessary"
-              value={Number(policyStats?.policy_necessary?.mean || 0).toFixed(2)}
+              value={normalizeLikertMean(policyStats?.policy_necessary?.mean).toFixed(2)}
             />
             <MiniKpi
               label="Policy Negative"
-              value={Number(policyStats?.policy_business_negative?.mean || 0).toFixed(2)}
+              value={normalizeLikertMean(policyStats?.policy_business_negative?.mean).toFixed(2)}
             />
             <MiniKpi
               label="Balance Needed"
-              value={Number(policyStats?.policy_balance_needed?.mean || 0).toFixed(2)}
+              value={normalizeLikertMean(policyStats?.policy_balance_needed?.mean).toFixed(2)}
             />
           </div>
         </section>

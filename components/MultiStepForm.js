@@ -58,12 +58,14 @@ export default function MultiStepForm() {
       {
         key: 'profile',
         title: 'Profile & Demographics',
-        subtitle: 'Provide your role, supermarket category, location, backup power source, and years in service.',
+        subtitle:
+          'Provide your role, market type, location, backup power source, and experience.',
       },
       {
         key: 'independent',
         title: 'Energy Crisis Factors',
-        subtitle: 'Evaluate the major energy-related factors affecting business and work using the five-point agreement scale.',
+        subtitle:
+          'Select your level of agreement for each statement.',
       },
     ];
 
@@ -71,7 +73,8 @@ export default function MultiStepForm() {
       base.push({
         key: 'business',
         title: 'Business Impact',
-        subtitle: 'Measure cost, sales, customer flow, storage, and backup-maintenance effects on the business.',
+        subtitle:
+          'Share how the energy crisis has affected costs, sales, and operations.',
       });
     }
 
@@ -79,20 +82,22 @@ export default function MultiStepForm() {
       base.push({
         key: 'employee',
         title: 'Employee Impact',
-        subtitle: 'Assess workload, stress, efficiency, routine disruption, and motivation under current energy conditions.',
+        subtitle:
+          'Share how the energy crisis has affected your work and environment.',
       });
     }
 
     base.push(
       {
         key: 'policy',
-        title: 'Policy Perception & Mitigation',
-        subtitle: 'Evaluate policy necessity, business impact, and your preferred solution.',
+        title: 'Policy Perception',
+        subtitle:
+          'Share your opinion about current policy and preferred solution.',
       },
       {
         key: 'review',
         title: 'Review & Submit',
-        subtitle: 'Please review your responses before final submission.',
+        subtitle: 'Review your answers before submission.',
       }
     );
 
@@ -162,7 +167,7 @@ export default function MultiStepForm() {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-5 shadow-2xl shadow-slate-200/60 backdrop-blur-xl md:p-8">
+    <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/80 p-4 shadow-2xl shadow-slate-200/60 backdrop-blur-xl md:p-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(13,59,102,0.06),_transparent_32%),radial-gradient(circle_at_bottom_left,_rgba(20,184,166,0.06),_transparent_28%)]" />
 
       <div className="relative z-10">
@@ -173,7 +178,7 @@ export default function MultiStepForm() {
           stepLabel={current.title}
         />
 
-        <div className="mb-6 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+        <div className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
           <p className="text-sm leading-6 text-slate-600">{current.subtitle}</p>
         </div>
 
@@ -184,13 +189,13 @@ export default function MultiStepForm() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.28 }}
-            className="space-y-5"
+            className="space-y-4"
           >
             {current.key === 'profile' && (
               <>
                 <SelectionQuestion
-                  title="Role"
-                  description="Select the category that best describes you."
+                  title="What is your role in the market?"
+                  description="Select your main role."
                   field="role"
                   value={formData.role}
                   onChange={handleChange}
@@ -201,20 +206,20 @@ export default function MultiStepForm() {
                 />
 
                 <SelectionQuestion
-                  title="Type of Supermarket"
-                  description="Choose the category that best matches your workplace."
+                  title="What type of market is this?"
+                  description="Choose the market type."
                   field="supermarket_type"
                   value={formData.supermarket_type}
                   onChange={handleChange}
                   options={[
-                    ['brand_chain', 'Brand Chain (e.g., Shwapno, Agora)'],
-                    ['independent_local_supermarket', 'Independent Local Supermarket'],
+                    ['brand_chain', 'Brand Chain'],
+                    ['independent_local_supermarket', 'Independent Market'],
                   ]}
                 />
 
                 <SelectionQuestion
-                  title="Location"
-                  description="Choose the geographic context of the supermarket."
+                  title="Where is the market located?"
+                  description="Choose the market location."
                   field="location"
                   value={formData.location}
                   onChange={handleChange}
@@ -225,7 +230,8 @@ export default function MultiStepForm() {
                 />
 
                 <SelectionQuestion
-                  title="Primary Backup Power Source"
+                  title="What is the main backup power source?"
+                  description="Select the main backup option."
                   field="backup_power_source"
                   value={formData.backup_power_source}
                   onChange={handleChange}
@@ -237,7 +243,8 @@ export default function MultiStepForm() {
                 />
 
                 <SelectionQuestion
-                  title="Years in Business/Service"
+                  title="How long have you worked in this sector?"
+                  description="Select your experience level."
                   field="years_in_service"
                   value={formData.years_in_service}
                   onChange={handleChange}
@@ -253,61 +260,61 @@ export default function MultiStepForm() {
             {current.key === 'independent' && (
               <>
                 <LikertQuestion
-                  title="Frequent electricity interruptions affect daily operations."
+                  title="Power cuts affect daily operations."
                   name="iv_power_interruptions"
                   value={formData.iv_power_interruptions}
                   onChange={(v) => handleChange('iv_power_interruptions', v)}
                 />
                 <LikertQuestion
-                  title="Power outages last for long durations and disrupt service."
+                  title="Power outages last too long."
                   name="iv_outage_duration"
                   value={formData.iv_outage_duration}
                   onChange={(v) => handleChange('iv_outage_duration', v)}
                 />
                 <LikertQuestion
-                  title="Lack of stable electricity affects business continuity."
+                  title="Unstable electricity affects business continuity."
                   name="iv_unstable_electricity"
                   value={formData.iv_unstable_electricity}
                   onChange={(v) => handleChange('iv_unstable_electricity', v)}
                 />
                 <LikertQuestion
-                  title="Rising fuel/oil prices increase operational pressure."
+                  title="Fuel and oil prices increase pressure."
                   name="iv_fuel_price_pressure"
                   value={formData.iv_fuel_price_pressure}
                   onChange={(v) => handleChange('iv_fuel_price_pressure', v)}
                 />
                 <LikertQuestion
-                  title="Electricity tariff increases make utility costs difficult to manage."
+                  title="Higher electricity tariffs are difficult to manage."
                   name="iv_tariff_pressure"
                   value={formData.iv_tariff_pressure}
                   onChange={(v) => handleChange('iv_tariff_pressure', v)}
                 />
                 <LikertQuestion
-                  title="Early shop closure policies restrict profitable business hours."
+                  title="Early closing reduces profitable hours."
                   name="iv_early_closure"
                   value={formData.iv_early_closure}
                   onChange={(v) => handleChange('iv_early_closure', v)}
                 />
                 <LikertQuestion
-                  title="Reduced working hours (9–4) limit customer flow."
+                  title="Reduced hours limit customer flow."
                   name="iv_reduced_working_hours"
                   value={formData.iv_reduced_working_hours}
                   onChange={(v) => handleChange('iv_reduced_working_hours', v)}
                 />
                 <LikertQuestion
-                  title="Energy supply issues create uncertainty in daily planning."
+                  title="Energy problems create planning uncertainty."
                   name="iv_daily_uncertainty"
                   value={formData.iv_daily_uncertainty}
                   onChange={(v) => handleChange('iv_daily_uncertainty', v)}
                 />
                 <LikertQuestion
-                  title="The energy crisis increases dependence on backup power systems."
+                  title="The market depends more on backup power."
                   name="iv_backup_dependence"
                   value={formData.iv_backup_dependence}
                   onChange={(v) => handleChange('iv_backup_dependence', v)}
                 />
                 <LikertQuestion
-                  title="Energy-related policies restrict business flexibility."
+                  title="Energy policies reduce business flexibility."
                   name="iv_policy_flexibility"
                   value={formData.iv_policy_flexibility}
                   onChange={(v) => handleChange('iv_policy_flexibility', v)}
@@ -318,7 +325,8 @@ export default function MultiStepForm() {
             {current.key === 'business' && (
               <>
                 <SelectionQuestion
-                  title="Operational cost increase level"
+                  title="How much have costs increased?"
+                  description="Choose the level of increase."
                   field="business_cost_increase_level"
                   value={formData.business_cost_increase_level}
                   onChange={handleChange}
@@ -331,7 +339,8 @@ export default function MultiStepForm() {
                 />
 
                 <SelectionQuestion
-                  title="Sales decrease level"
+                  title="How much have sales decreased?"
+                  description="Choose the level of decrease."
                   field="business_sales_decrease_level"
                   value={formData.business_sales_decrease_level}
                   onChange={handleChange}
@@ -344,13 +353,13 @@ export default function MultiStepForm() {
                 />
 
                 <LikertQuestion
-                  title="Operational costs have increased due to the energy crisis."
+                  title="Operational costs have increased."
                   name="business_cost_increase"
                   value={formData.business_cost_increase}
                   onChange={(v) => handleChange('business_cost_increase', v)}
                 />
                 <LikertQuestion
-                  title="Daily sales have decreased due to reduced business hours."
+                  title="Daily sales have decreased."
                   name="business_sales_reduced_hours"
                   value={formData.business_sales_reduced_hours}
                   onChange={(v) => handleChange('business_sales_reduced_hours', v)}
@@ -362,19 +371,19 @@ export default function MultiStepForm() {
                   onChange={(v) => handleChange('business_profit_margin_decline', v)}
                 />
                 <LikertQuestion
-                  title="Customer flow has decreased during evening hours."
+                  title="Evening customer flow has decreased."
                   name="business_evening_customer_flow"
                   value={formData.business_evening_customer_flow}
                   onChange={(v) => handleChange('business_evening_customer_flow', v)}
                 />
                 <LikertQuestion
-                  title="Inventory management (refrigeration/storage) has become difficult."
+                  title="Inventory management has become difficult."
                   name="business_inventory_difficulty"
                   value={formData.business_inventory_difficulty}
                   onChange={(v) => handleChange('business_inventory_difficulty', v)}
                 />
                 <LikertQuestion
-                  title="Maintenance costs for backup systems have increased."
+                  title="Backup maintenance costs have increased."
                   name="business_backup_maintenance_cost"
                   value={formData.business_backup_maintenance_cost}
                   onChange={(v) => handleChange('business_backup_maintenance_cost', v)}
@@ -385,7 +394,8 @@ export default function MultiStepForm() {
             {current.key === 'employee' && (
               <>
                 <SelectionQuestion
-                  title="Workload change"
+                  title="How has your workload changed?"
+                  description="Choose the closest option."
                   field="employee_workload_change"
                   value={formData.employee_workload_change}
                   onChange={handleChange}
@@ -397,7 +407,7 @@ export default function MultiStepForm() {
                 />
 
                 <LikertQuestion
-                  title="The energy crisis has increased my work stress."
+                  title="My work stress has increased."
                   name="employee_work_stress"
                   value={formData.employee_work_stress}
                   onChange={(v) => handleChange('employee_work_stress', v)}
@@ -409,31 +419,31 @@ export default function MultiStepForm() {
                   onChange={(v) => handleChange('employee_efficiency_decrease', v)}
                 />
                 <LikertQuestion
-                  title="Power-related issues make my job more difficult."
+                  title="Power-related issues make my job harder."
                   name="employee_job_difficulty"
                   value={formData.employee_job_difficulty}
                   onChange={(v) => handleChange('employee_job_difficulty', v)}
                 />
                 <LikertQuestion
-                  title="Customer handling becomes more difficult during disruptions."
+                  title="Customer handling becomes more difficult."
                   name="employee_customer_handling"
                   value={formData.employee_customer_handling}
                   onChange={(v) => handleChange('employee_customer_handling', v)}
                 />
                 <LikertQuestion
-                  title="The working environment becomes uncomfortable during outages."
+                  title="The work environment becomes uncomfortable."
                   name="employee_uncomfortable_environment"
                   value={formData.employee_uncomfortable_environment}
                   onChange={(v) => handleChange('employee_uncomfortable_environment', v)}
                 />
                 <LikertQuestion
-                  title="My daily work routine has been disrupted."
+                  title="My daily work routine is disrupted."
                   name="employee_routine_disruption"
                   value={formData.employee_routine_disruption}
                   onChange={(v) => handleChange('employee_routine_disruption', v)}
                 />
                 <LikertQuestion
-                  title="I feel less motivated to work under current conditions."
+                  title="I feel less motivated to work."
                   name="employee_low_motivation"
                   value={formData.employee_low_motivation}
                   onChange={(v) => handleChange('employee_low_motivation', v)}
@@ -444,26 +454,27 @@ export default function MultiStepForm() {
             {current.key === 'policy' && (
               <>
                 <LikertQuestion
-                  title="Energy-saving policies are necessary for the current situation."
+                  title="Energy-saving policies are necessary."
                   name="policy_necessary"
                   value={formData.policy_necessary}
                   onChange={(v) => handleChange('policy_necessary', v)}
                 />
                 <LikertQuestion
-                  title="These policies negatively affect business performance."
+                  title="Current policies hurt business performance."
                   name="policy_business_negative"
                   value={formData.policy_business_negative}
                   onChange={(v) => handleChange('policy_business_negative', v)}
                 />
                 <LikertQuestion
-                  title="A balance between energy saving and economic activity is needed."
+                  title="A balance between energy saving and business activity is needed."
                   name="policy_balance_needed"
                   value={formData.policy_balance_needed}
                   onChange={(v) => handleChange('policy_balance_needed', v)}
                 />
 
                 <SelectionQuestion
-                  title="Preferred policy solution"
+                  title="Which policy solution do you prefer?"
+                  description="Choose the best option."
                   field="policy_preferred_solution"
                   value={formData.policy_preferred_solution}
                   onChange={handleChange}
@@ -480,7 +491,7 @@ export default function MultiStepForm() {
             {current.key === 'review' && (
               <QuestionCard
                 title="Submission Summary"
-                description="Review the response object below before you submit."
+                description="Please review your responses before final submission."
               >
                 <div className="rounded-2xl border border-slate-200 bg-slate-950 p-4 text-sm text-slate-100 shadow-inner">
                   <pre className="overflow-x-auto whitespace-pre-wrap break-words">
@@ -545,10 +556,14 @@ function QuestionCard({ title, description, children }) {
     <motion.div
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
-      className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm"
+      className="rounded-3xl border border-slate-200 bg-white p-4 md:p-5 shadow-sm"
     >
-      <h3 className="text-lg font-semibold text-slate-900">{title}</h3>
-      {description && <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>}
+      <h3 className="text-base md:text-lg font-semibold text-slate-900 leading-7">
+        {title}
+      </h3>
+      {description && (
+        <p className="mt-1 text-sm leading-6 text-slate-500">{description}</p>
+      )}
       <div className="mt-4">{children}</div>
     </motion.div>
   );
@@ -556,7 +571,7 @@ function QuestionCard({ title, description, children }) {
 
 function LikertQuestion({ title, name, value, onChange }) {
   return (
-    <QuestionCard title={title} description="Select one response on the five-point agreement scale.">
+    <QuestionCard title={title} description="Select one option.">
       <LikertScale name={name} value={value} onChange={onChange} />
     </QuestionCard>
   );
@@ -587,7 +602,7 @@ function RoleCard({ active, title, subtitle, onClick }) {
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
-      className={`rounded-2xl border p-5 text-left transition-all duration-200 ${
+      className={`rounded-2xl border p-4 text-left transition-all duration-200 ${
         active
           ? 'border-primary bg-primary text-white shadow-lg shadow-blue-900/15'
           : 'border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50'
@@ -595,7 +610,7 @@ function RoleCard({ active, title, subtitle, onClick }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-base font-semibold">{title}</p>
+          <p className="text-sm md:text-base font-semibold leading-6">{title}</p>
           {subtitle ? (
             <p className={`mt-1 text-sm leading-6 ${active ? 'text-white/85' : 'text-slate-500'}`}>
               {subtitle}

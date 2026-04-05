@@ -1,5 +1,5 @@
 import cookie from 'cookie';
-import { updateResponseReviewStatus, deleteResponseById } from '../../lib/db';
+import { pool } from '../../lib/db';
 
 export default async function handler(req, res) {
   const cookies = cookie.parse(req.headers.cookie || '');
@@ -11,25 +11,53 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'PATCH') {
-      const { id, is_reviewed } = req.body;
+      const { id, ids, is_reviewed } = req.body;
 
-      if (!id || typeof is_reviewed !== 'boolean') {
-        return res.status(400).json({ error: 'Invalid payload' });
+      if (typeof is_reviewed !== 'boolean') {
+        return res.status(400).json({ error: 'Invalid review status' });
       }
 
-      const updated = await updateResponseReviewStatus(id, is_reviewed);
-      return res.status(200).json({ success: true, data: updated });
+      if (Array.isArray(ids) && ids.length > 0) {
+        const { rows } = await pool.query(
+          'UPDATE responses SET is_reviewed = $1 WHERE id = ANY($2::int[]) RETURNING *;',
+          [is_reviewed, ids]
+        );
+        return res.status(200).json({ success: true, data: rows });
+      }
+
+      if (!id) {
+        return res.status(400).json({ error: 'Missing id or ids' });
+      }
+
+      const { rows } = await pool.query(
+        'UPDATE responses SET is_reviewed = $1 WHERE id = $2 RETURNING *;',
+        [is_reviewed, id]
+      );
+
+      return res.status(200).json({ success: true, data: rows[0] });
     }
 
     if (req.method === 'DELETE') {
-      const { id } = req.body;
+      const { id, ids } = req.body;
 
-      if (!id) {
-        return res.status(400).json({ error: 'Missing id' });
+      if (Array.isArray(ids) && ids.length > 0) {
+        const { rows } = await pool.query(
+          'DELETE FROM responses WHERE id = ANY($1::int[]) RETURNING id;',
+          [ids]
+        );
+        return res.status(200).json({ success: true, data: rows });
       }
 
-      const deleted = await deleteResponseById(id);
-      return res.status(200).json({ success: true, data: deleted });
+      if (!id) {
+        return res.status(400).json({ error: 'Missing id or ids' });
+      }
+
+      const { rows } = await pool.query(
+        'DELETE FROM responses WHERE id = $1 RETURNING id;',
+        [id]
+      );
+
+      return res.status(200).json({ success: true, data: rows[0] });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

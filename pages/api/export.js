@@ -4,10 +4,21 @@ import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
 
 function formatLabel(value) {
-  if (value === null || value === undefined) return '';
+  if (value === null || value === undefined || value === '') return '';
   return String(value)
     .replaceAll('_', ' ')
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatLikert(value) {
+  const map = {
+    1: 'Strongly Agree',
+    2: 'Agree',
+    3: 'Neutral',
+    4: 'Disagree',
+    5: 'Strongly Disagree',
+  };
+  return map[Number(value)] || value || '';
 }
 
 function calcMean(rows, field) {
@@ -48,105 +59,111 @@ export default async function handler(req, res) {
     }
 
     const headers = [
-      'id',
-      'response_id',
-      'submitted_at',
-      'role',
-      'supermarket_type',
-      'location',
-      'backup_power_source',
-      'years_in_service',
-      'iv_power_interruptions',
-      'iv_outage_duration',
-      'iv_unstable_electricity',
-      'iv_fuel_price_pressure',
-      'iv_tariff_pressure',
-      'iv_early_closure',
-      'iv_reduced_working_hours',
-      'iv_daily_uncertainty',
-      'iv_backup_dependence',
-      'iv_policy_flexibility',
-      'business_cost_increase_level',
-      'business_sales_decrease_level',
-      'business_cost_increase',
-      'business_sales_reduced_hours',
-      'business_profit_margin_decline',
-      'business_evening_customer_flow',
-      'business_inventory_difficulty',
-      'business_backup_maintenance_cost',
-      'employee_workload_change',
-      'employee_work_stress',
-      'employee_efficiency_decrease',
-      'employee_job_difficulty',
-      'employee_customer_handling',
-      'employee_uncomfortable_environment',
-      'employee_routine_disruption',
-      'employee_low_motivation',
-      'policy_necessary',
-      'policy_business_negative',
-      'policy_balance_needed',
-      'policy_preferred_solution',
-      'ip_hash',
-    ];
-
-    const csvHeaders = [
       'ID',
       'Response ID',
       'Submitted At',
-      'Role',
-      'Supermarket Type',
-      'Location',
-      'Backup Power Source',
-      'Years In Service',
-      'IV Power Interruptions',
-      'IV Outage Duration',
-      'IV Unstable Electricity',
-      'IV Fuel Price Pressure',
-      'IV Tariff Pressure',
-      'IV Early Closure',
-      'IV Reduced Working Hours',
-      'IV Daily Uncertainty',
-      'IV Backup Dependence',
-      'IV Policy Flexibility',
-      'Business Cost Increase Level',
-      'Business Sales Decrease Level',
-      'Business Cost Increase',
-      'Business Sales Reduced Hours',
-      'Business Profit Margin Decline',
-      'Business Evening Customer Flow',
-      'Business Inventory Difficulty',
-      'Business Backup Maintenance Cost',
-      'Employee Workload Change',
-      'Employee Work Stress',
-      'Employee Efficiency Decrease',
-      'Employee Job Difficulty',
-      'Employee Customer Handling',
-      'Employee Uncomfortable Environment',
-      'Employee Routine Disruption',
-      'Employee Low Motivation',
-      'Policy Necessary',
-      'Policy Business Negative',
-      'Policy Balance Needed',
-      'Policy Preferred Solution',
+      'Reviewed Status',
+
+      'What is your role in the market?',
+      'What type of market is this?',
+      'Where is the market located?',
+      'What is the main backup power source?',
+      'How long have you worked in this sector?',
+
+      'Power cuts affect daily operations.',
+      'Power outages last too long.',
+      'Unstable electricity affects business continuity.',
+      'Fuel and oil prices increase pressure.',
+      'Higher electricity tariffs are difficult to manage.',
+      'Early closing reduces profitable hours.',
+      'Reduced hours limit customer flow.',
+      'Energy problems create planning uncertainty.',
+      'The market depends more on backup power.',
+      'Energy policies reduce business flexibility.',
+
+      'How much have costs increased?',
+      'How much have sales decreased?',
+      'Operational costs have increased.',
+      'Daily sales have decreased.',
+      'Profit margins have declined.',
+      'Evening customer flow has decreased.',
+      'Inventory management has become difficult.',
+      'Backup maintenance costs have increased.',
+
+      'How has your workload changed?',
+      'My work stress has increased.',
+      'My work efficiency has decreased.',
+      'Power-related issues make my job harder.',
+      'Customer handling becomes more difficult.',
+      'The work environment becomes uncomfortable.',
+      'My daily work routine is disrupted.',
+      'I feel less motivated to work.',
+
+      'Energy-saving policies are necessary.',
+      'Current policies hurt business performance.',
+      'A balance between energy saving and business activity is needed.',
+      'Which policy solution do you prefer?',
+
       'IP Hash',
     ];
 
-    const rows = responses.map((r) =>
-      headers.map((header) => {
-        const value = r[header];
-        if (header === 'submitted_at') return new Date(value).toLocaleString();
-        return value ?? '';
-      })
-    );
+    const rows = responses.map((r) => [
+      r.id,
+      r.response_id,
+      new Date(r.submitted_at).toLocaleString(),
+      r.is_reviewed ? 'Reviewed' : 'Pending',
+
+      formatLabel(r.role),
+      formatLabel(r.supermarket_type),
+      formatLabel(r.location),
+      formatLabel(r.backup_power_source),
+      formatLabel(r.years_in_service),
+
+      formatLikert(r.iv_power_interruptions),
+      formatLikert(r.iv_outage_duration),
+      formatLikert(r.iv_unstable_electricity),
+      formatLikert(r.iv_fuel_price_pressure),
+      formatLikert(r.iv_tariff_pressure),
+      formatLikert(r.iv_early_closure),
+      formatLikert(r.iv_reduced_working_hours),
+      formatLikert(r.iv_daily_uncertainty),
+      formatLikert(r.iv_backup_dependence),
+      formatLikert(r.iv_policy_flexibility),
+
+      formatLabel(r.business_cost_increase_level),
+      formatLabel(r.business_sales_decrease_level),
+      formatLikert(r.business_cost_increase),
+      formatLikert(r.business_sales_reduced_hours),
+      formatLikert(r.business_profit_margin_decline),
+      formatLikert(r.business_evening_customer_flow),
+      formatLikert(r.business_inventory_difficulty),
+      formatLikert(r.business_backup_maintenance_cost),
+
+      formatLabel(r.employee_workload_change),
+      formatLikert(r.employee_work_stress),
+      formatLikert(r.employee_efficiency_decrease),
+      formatLikert(r.employee_job_difficulty),
+      formatLikert(r.employee_customer_handling),
+      formatLikert(r.employee_uncomfortable_environment),
+      formatLikert(r.employee_routine_disruption),
+      formatLikert(r.employee_low_motivation),
+
+      formatLikert(r.policy_necessary),
+      formatLikert(r.policy_business_negative),
+      formatLikert(r.policy_balance_needed),
+      formatLabel(r.policy_preferred_solution),
+
+      r.ip_hash || '',
+    ]);
 
     if (format === 'csv') {
       const csvRows = [
-        csvHeaders.join(','),
+        headers.map((h) => JSON.stringify(h)).join(','),
         ...rows.map((row) => row.map((v) => JSON.stringify(v ?? '')).join(',')),
       ];
 
       res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-      res.setHeader('Content-Disposition', 'attachment; filename="responses.csv"');
+      res.setHeader('Content-Disposition', 'attachment; filename="responses_full_questions.csv"');
       return res.status(200).send(csvRows.join('\n'));
     }
 
@@ -154,20 +171,24 @@ export default async function handler(req, res) {
       const workbook = new ExcelJS.Workbook();
       const sheet = workbook.addWorksheet('Responses');
 
-      sheet.addRow(csvHeaders);
+      sheet.addRow(headers);
       rows.forEach((row) => sheet.addRow(row));
 
       sheet.getRow(1).font = { bold: true };
-      sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center' };
+      sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
 
-      sheet.columns = csvHeaders.map((header) => ({
+      sheet.columns = headers.map((header) => ({
         header,
         key: header,
-        width: Math.max(18, header.length + 2),
+        width: Math.min(Math.max(header.length / 1.5, 18), 42),
       }));
 
       sheet.eachRow((row, rowNumber) => {
-        row.alignment = { vertical: 'middle', horizontal: rowNumber === 1 ? 'center' : 'left', wrapText: true };
+        row.alignment = {
+          vertical: 'middle',
+          horizontal: rowNumber === 1 ? 'center' : 'left',
+          wrapText: true,
+        };
       });
 
       res.setHeader(
@@ -176,7 +197,7 @@ export default async function handler(req, res) {
       );
       res.setHeader(
         'Content-Disposition',
-        'attachment; filename="responses.xlsx"'
+        'attachment; filename="responses_full_questions.xlsx"'
       );
 
       await workbook.xlsx.write(res);
